@@ -1,14 +1,10 @@
 import keras
 import numpy as np
-import pieces as p
 import random as r
-import state as s
 import time as t
 import copy as c
-import math
 import os
-
-
+from Utils import utils as s
 
 # ----------------------------------------------------
 # User-Defined Parameters
