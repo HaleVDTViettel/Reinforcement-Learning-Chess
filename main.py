@@ -1,5 +1,5 @@
 import warnings
-warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import os
 import time
@@ -13,26 +13,34 @@ import random as r
 import tensorflow as tf
 from collections import deque
 from keras.optimizers import AdamW
-
 from Utils import utils as s
-
+from Utils import sysinfo as si
 # disable tensorflow logging for clean output
 keras.utils.disable_interactive_logging()
 
 # set memory growth for GPU
+print("Setting memory growth for GPU...")
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
-tf.config.experimental.set_memory_growth(physical_devices[0], True)
+if physical_devices:
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+print("Memory growth set.")
+# get system information
+print("Getting system information...")
+system_info = si.print_system_info()
+print("System information obtained.")
+print(f"_"*50)
+
+
+stop_thread = False
 
 # Function to print the elapsed time continuously
 def print_time():
+    global stop_thread
     start_time = time.time()
     while not stop_thread:
         elapsed_time = time.time() - start_time
         print(f"Elapsed time: {elapsed_time:.2f} seconds", end='\r')
-        time.sleep(0.1)
-
-def print_loss(loss):
-    print(f"Loss: {loss:.4f}", end='\r')
+        time.sleep(.1)
 
 class DQNAgent:
     def __init__(self, state_size, action_size, hidden_units, learning_rate):
@@ -89,6 +97,7 @@ class DQNAgent:
         return action, q_values.flatten()    
 
     def replay(self, batch_size):
+        # print("Replaying...")
         minibatch = r.sample(self.memory, batch_size)
         states = np.array([experience[0] for experience in minibatch])
         actions = np.array([experience[1] for experience in minibatch])
@@ -98,47 +107,26 @@ class DQNAgent:
 
         targets = rewards
         
-        history = self.model.fit([states, actions], targets, epochs=1, verbose=0, use_multiprocessing=True, workers=20)
+        history = self.model.fit([states, actions], targets, epochs=10, verbose=0, use_multiprocessing=True, workers=20)
         
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
-
+        # print("Replay done.")
         return history.history['loss'][0]
 
     def load(self, name):
+        print(f"Loading model from {name}...")
         self.model.load_weights(name)
+        print("Model loaded.")
 
     def save(self, name):
+        print(f"Saving model to {name}...")
         self.model.save_weights(name)
+        print("Model saved.")
 
 def flatten_state(board_state):
     return board_state.flatten()
 
-def generate_game_step(agent, pieces, player, move, visualize=False, print_move=False, algebraic=False):
-    board_state = s.board_state(pieces)
-    state = flatten_state(board_state)
-    
-    action_space = s.action_space(pieces, player)
-    action, _ = agent.act(state)  # state is already flattened
-    
-    piece_index = action // 56
-    move_index = action % 56
-    
-    if action_space[piece_index, move_index] == 1:
-        player = move_piece(piece_index, move_index, player, pieces, switch_player=True, print_move=print_move, algebraic=algebraic)
-        move += 1
-        next_board_state = s.board_state(pieces)
-        next_state = flatten_state(next_board_state)
-        reward = s.points(pieces)  # You might want to design a better reward function
-        done = not (pieces[4].is_active and pieces[28].is_active) or move >= max_moves
-        
-        if visualize:
-            visualize_board(pieces, player, move)
-        
-        return next_state, reward, done, player, move, action
-    else:
-        # Invalid move, penalize
-        return state, -10, False, player, move, action
 
 def initialize_board(random=False, keep_prob=1.0):
     """
@@ -178,18 +166,20 @@ def generate_game(agent, batch_size, max_moves, epsilon, visualize, print_move, 
     """
     Generating feature and target batches
     """
-
+    # print("Generating game...\r\n")
     # Generates training data based on batches of full-depth Monte-Carlo simulations
     # performing epsilon-greedy policy evaluation.
 
     feature_batches = []
     label_batches = []
-    print(f"Training Game Batch of Size {batch_size} with Epsilon {epsilon}")
     # update the time running sequentially 
     # Loop through batch steps
     for batch_step in range(0, batch_size):
         if visualize or print_move:
-            print(f"\n-----------BEGIN GAME {batch_step}----------")
+            print("\033c", end="")
+            # print("Training Game Batch of Size 8192 with Epsilon 0.2")
+            print(f"Training Game Batch of Size {batch_size} with Epsilon {epsilon}")
+            print(f"-----------BEGIN GAME {batch_step+1}----------")
 
         # ----------------------------------------------------
         # Initialize Board State
@@ -199,7 +189,7 @@ def generate_game(agent, batch_size, max_moves, epsilon, visualize, print_move, 
         all_returns = []
 
         # Generating board parameters
-        pieces, initial_state, player, move = initialize_board(random=True, keep_prob=0.85)
+        pieces, initial_state, player, move = initialize_board(random=True, keep_prob=0.65)
         point_diff_0 = s.points(pieces)
 
 
@@ -290,7 +280,7 @@ def generate_game(agent, batch_size, max_moves, epsilon, visualize, print_move, 
             move += 1
 
         if visualize or print_move:
-            print(f"----------END OF GAME {batch_step}----------")
+            print(f"----------END OF GAME {batch_step+1}----------")
 
         feature_batches.append(initial_state)
         label_batches.append(all_returns[0])
@@ -338,7 +328,7 @@ if __name__ == "__main__":
     parser.add_argument("-rd", "--rootdir",      help="Root directory for project",                          type=str,   default="./results")
     parser.add_argument("-sd", "--savedir",      help="Save directory for project",                          type=str,   default="checkpoints/model")
     parser.add_argument("-ld", "--loaddir",      help="Load directory for project",                          type=str,   default="checkpoints/model")
-    parser.add_argument("-w",  "--workers",      help="Number of workers for parallel processing",           type=int,   default=os.cpu_count())
+    parser.add_argument("-w",  "--workers",      help="Number of workers for parallel processing",           type=int,   default=44)
 
     # Parse Arguments from Command Line
     args = parser.parse_args()
@@ -365,10 +355,24 @@ if __name__ == "__main__":
     load_path = args.loaddir
     save_path = args.savedir
 
-    
+    # check if the directory exists
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+
+    # check if the directory exists
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+        
+    # check if the directory exists
+    if not os.path.exists(load_path):
+        os.makedirs(load_path)
+
     filewriter_path = os.path.join(dir_name, "output")                    # Filewriter save path
     training_loss = os.path.join(dir_name, "training_loss.txt")            # Training loss
 
+    # ----------------------------------------------------
+
+    # Set number of workers for parallel processing
     tf.config.threading.set_inter_op_parallelism_threads(workers) 
     tf.config.threading.set_intra_op_parallelism_threads(workers)
 
@@ -404,7 +408,6 @@ if __name__ == "__main__":
 
     start_time = t.time()
     # Variable to control the timer thread
-    stop_thread = False
 
     for episode in range(num_training):
         # Start the timer thread
@@ -424,13 +427,6 @@ if __name__ == "__main__":
             if len(agent.memory) > batch_size:
                 loss += agent.replay(batch_size)
 
-        # Stop the timer thread
-        stop_thread = True
-        timer_thread.join()  # Wait for the timer thread to finish
-
-        # Clear the printed line
-        print("\r" + " " * 40 + "\r", end='')
-
         # Average loss over the batch
         avg_loss = loss / batch_size if batch_size > 0 else 0
         t_loss.append(avg_loss)
@@ -445,10 +441,19 @@ if __name__ == "__main__":
 
             # Report percent completion and time remaining
             p_completion = 100 * episode / num_training
-            print("\nPercent completion: %.3f%%" % p_completion)
+            print("Percent completion: %.3f%%" % p_completion)
 
             avg_elapsed_time = (t.time() - start_time) / (episode + 1)
             sec_remaining = avg_elapsed_time * (num_training - episode)
             min_remaining = round(sec_remaining / 60)
             print("Time Remaining: %d minutes" % min_remaining)
+            print("Time Elapsed: %.2f seconds" % (t.time() - start_time))
+            print(f"="*50)
 
+        # Stop the timer thread
+        stop_thread = True
+        timer_thread.join()  # Wait for the timer thread to finish
+        # Clear the printed line
+        print("\r" + " " * 40 + "\r", end='')
+        # Reset the stop_thread variable
+        stop_thread = False

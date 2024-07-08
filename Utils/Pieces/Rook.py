@@ -131,16 +131,17 @@ class Rook():
 
 		# Print movement if indicated
 		file_list = ['a','b','c','d','e','f','g','h']
-		if print_move and algebraic:
-			if piece_remove:
-				print(self.symbol + file_list[old_file-1] + str(old_rank)+ " x " + file_list[self.file-1] + str(self.rank))
+		if print_move:
+			if algebraic:
+				if piece_remove:
+					print(f"{self.symbol}{file_list[old_file-1]}{old_rank} x {file_list[self.file-1]}{self.rank}", end=" "*20+"\r\n")
+				else:
+					print(f"{self.symbol}{file_list[old_file-1]}{old_rank}-{file_list[self.file-1]}{self.rank}", end=" "*20+"\r\n") #
 			else:
-				print(self.symbol + file_list[old_file-1] + str(old_rank) + "-" + file_list[self.file-1] + str(self.rank))
-		elif print_move:
-			if piece_remove:
-				print(self.name + " to " + str(self.file) + "," + str(self.rank) + " taking " + remove_name)
-			else:
-				print(self.name + " to " + str(self.file) + "," + str(self.rank))
+				if piece_remove:
+					print(f"{self.name} to {self.file},{self.rank} taking {remove_name}", end=" "*20+"\r\n")
+				else:
+					print(f"{self.name} to {self.file},{self.rank}", end=" "*20+"\r\n")
 
 
 	def remove(self):
