@@ -11,12 +11,15 @@ from .Pieces.Rook import Rook
 
 def initialize_pieces(random=False, keep_prob=1.0):
 
-	"""Construct list of pieces as objects"""
+	"""
+	Construct list of pieces as objects
 
-	# Args: (1) random: Whether board is initialized to random initial state
-	#		(2) keep_prob: Probability of retaining piece
-	# Returns: Python list of pieces
-	# 1,1 = a1 ... 8,8 = h8
+	Args: random: Whether board is initialized to random initial state
+		  keep_prob: Probability of retaining piece
+
+	Returns: Python list of pieces
+	1,1 = a1 ... 8,8 = h8
+	"""
 
 	piece_list = [Rook('white',1,1), Knight('white',2,1), Bishop('white',3,1), Queen('white'),
 		King('white'), Bishop('white',6,1), Knight('white',7,1), Rook('white',8,1),
@@ -27,25 +30,25 @@ def initialize_pieces(random=False, keep_prob=1.0):
 		Rook('black',1,8), Knight('black',2,8), Bishop('black',3,8), Queen('black'),
 		King('black'), Bishop('black',6,8), Knight('black',7,8), Rook('black',8,8)]
 
-	# If random is True, randomize piece positions and activity
+	# If random is True, randomize piece positions & activity
 	if random:
 		# For piece in piece list...
 		for piece in piece_list:
 			# Toggle activity based on uniform distribution (AND PIECE IS NOT KING)
-			if r.random() >= keep_prob and piece.name != 'King':
+			if r.random() >= keep_prob & piece.name != 'King':
 				piece.remove()
-			# If the piece was not removed, randomize file and rank
+			# If the piece was not removed, randomize file & rank
 			else:
 				newfile = r.randint(1,8)
 				newrank = r.randint(1,8)
 
 				# If there is another piece in the target tile, swap places
 				for other_piece in piece_list:
-					if other_piece.is_active and other_piece.file == newfile and other_piece.rank == newrank:
+					if other_piece.is_active & other_piece.file == newfile & other_piece.rank == newrank:
 						# Swap places
 						other_piece.file = piece.file
 						other_piece.rank = piece.rank
-				# Else, and in the previous case, update the piece's file and rank
+				# Else, & in the previous case, update the piece's file & rank
 				piece.file = newfile
 				piece.rank = newrank
 				piece.move_count += 1
@@ -55,14 +58,30 @@ def initialize_pieces(random=False, keep_prob=1.0):
 
 def board_state(piece_list):
 
-	"""Configuring inputs for value function network"""
+	"""Configuring inputs for value function network
 
-	# Args: (1) piece list
+	The output contains M planes of dimensions (N X N) where (N X N) is the size of the board.
+	There are M planes "stacked" in layers where each layer represents a different "piece group" 
+	(e.g. white pawns, black rooks, etc.) in one-hot format where 1 represents a piece in those
+	coordinates & 0 represents the piece is not in those coordinates.
 
-	# The output contains M planes of dimensions (N X N) where (N X N) is the size of the board.
-	# There are M planes "stacked" in layers where each layer represents a different "piece group" 
-	# (e.g. white pawns, black rooks, etc.) in one-hot format where 1 represents a piece in those
-	# coordinates and 0 represents the piece is not in those coordinates.
+	The M layers each represent a different piece group 
+	The order of is as follows:
+	- 0: White Pawns 		Pieces 8 - 15
+	- 1: White Knights		Pieces 1 & 6
+	- 2: White Bishops		Pieces 2 & 5
+	- 3: White Rooks 		Pieces 0 & 7
+	- 4: White Queen		Piece 3
+	- 5: White King 		Piece 4
+	- 6: Black Pawns 		Pieces 16 - 23
+	- 7: Black Knights 		Pieces 25 & 30
+	- 8: Black Bishops 		Pieces 26 & 29
+	- 9: Black Rooks 		Pieces 24 & 31
+	- 10: Black Queen		Piece 27
+	- 11: Black King 		Piece 28
+	Note that the number of pieces in each category may change upon piece promotion or removal
+	(hence the code below will remain general).
+ 	"""
 
 	# Define parameters
 	N = 8	# N = board dimensions (8 x 8)
@@ -71,126 +90,106 @@ def board_state(piece_list):
 	# Initializing board state with dimensions N x N x (MT + L)
 	board = np.zeros((N,N,M))
 
-	# The M layers each represent a different piece grou The order of is as follows:
-	# 0: White Pawns 		Pieces 8 - 15
-	# 1: White Knights		Pieces 1 and 6
-	# 2: White Bishops		Pieces 2 and 5
-	# 3: White Rooks 		Pieces 0 and 7
-	# 4: White Queen		Piece 3
-	# 5: White King 		Piece 4
-	# 6: Black Pawns 		Pieces 16 - 23
-	# 7: Black Knights 		Pieces 25 and 30
-	# 8: Black Bishops 		Pieces 26 and 29
-	# 9: Black Rooks 		Pieces 24 and 31
-	# 10: Black Queen		Piece 27
-	# 11: Black King 		Piece 28
-	# Note that the number of pieces in each category may change upon piece promotion or removal
-	# (hence the code below will remain general).
-
 	# Fill board state with pieces
 	for piece in piece_list:
-		# Place active white pawns in plane 0 and continue to next piece
-		if piece.is_active and piece.color == 'white' and piece.name == 'Pawn':
-				board[piece.file-1, piece.rank-1, 0] = 1
+		if piece.is_active:
+			# Place active white pieces in planes 0-5 & continue to next piece
+			if piece.color == 'white':
+				
+				if piece.name == 'Pawn':
+						board[piece.file-1, piece.rank-1, 0] = 1
 
-		# Place active white knights in plane 1 and continue to next piece
-		elif piece.is_active and piece.color == 'white' and piece.name == 'Knight':
-				board[piece.file-1, piece.rank-1, 1] = 1
+				elif piece.name == 'Knight':
+						board[piece.file-1, piece.rank-1, 1] = 1
 
-		# Place active white bishops in plane 2 and continue to next piece
-		elif piece.is_active and piece.color == 'white' and piece.name == 'Bishop':
-				board[piece.file-1, piece.rank-1, 2] = 1
+				elif piece.name == 'Bishop':
+						board[piece.file-1, piece.rank-1, 2] = 1
 
-		# Place active white rooks in plane 3 and continue to next piece
-		elif piece.is_active and piece.color == 'white' and piece.name == 'Rook':
-				board[piece.file-1, piece.rank-1, 3] = 1
+				elif piece.name == 'Rook':
+						board[piece.file-1, piece.rank-1, 3] = 1
 
-		# Place active white queen(s) in plane 4 and continue to next piece
-		elif piece.is_active and piece.color == 'white' and piece.name == 'Queen':
-				board[piece.file-1, piece.rank-1, 4] = 1
+				elif piece.name == 'Queen':
+						board[piece.file-1, piece.rank-1, 4] = 1
 
-		# Place active white king in plane 5 and continue to next piece
-		elif piece.is_active and piece.color == 'white' and piece.name == 'King':
-				board[piece.file-1, piece.rank-1, 5] = 1
+				elif piece.name == 'King':
+						board[piece.file-1, piece.rank-1, 5] = 1
 
-		# Place active black pawns in plane 6 and continue to next piece
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Pawn':
-				board[piece.file-1, piece.rank-1, 6] = 1
+			# Place active black pieces in planes 6-11 & continue to next piece
+			elif piece.color == 'black':
 
-		# Place active black knights in plane 7 and continue to next piece
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Knight':
-				board[piece.file-1, piece.rank-1, 7] = 1
+				if piece.name == 'Pawn':
+					board[piece.file-1, piece.rank-1, 6] = 1
 
-		# Place active black bishops in plane 8 and continue to next piece
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Bishop':
-				board[piece.file-1, piece.rank-1, 8] = 1
+				elif piece.name == 'Knight':
+						board[piece.file-1, piece.rank-1, 7] = 1
 
-		# Place active black rooks in plane 9 and continue to next piece
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Rook':
-				board[piece.file-1, piece.rank-1, 9] = 1
+				elif piece.name == 'Bishop':
+						board[piece.file-1, piece.rank-1, 8] = 1
 
-		# Place active black queen(s) in plane 10 and continue to next piece
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Queen':
-				board[piece.file-1, piece.rank-1, 10] = 1
+				elif piece.name == 'Rook':
+						board[piece.file-1, piece.rank-1, 9] = 1
 
-		# Place active black king in plane 11 and continue to next piece
-		elif piece.is_active and piece.color == 'black' and piece.name == 'King':
-				board[piece.file-1, piece.rank-1, 11] = 1
+				elif piece.name == 'Queen':
+						board[piece.file-1, piece.rank-1, 10] = 1
+
+				elif piece.name == 'King':
+						board[piece.file-1, piece.rank-1, 11] = 1
 
 	# Return board state
 	return board
 
 def visualize_state(piece_list):
 
-	"""Visualizing board in terminal"""
+	"""
+	Visualizing board in terminal
 
-	# Args: (1) piece list
-
-	# The output is an 8x8 grid indicating the present locations for each piece
-
+	The output is an 8x8 grid indicating the present locations for each piece
+	"""
 	# Initializing empty grid
 	visualization = np.empty([8,8],dtype=object)
 	for i in range(0,8):
 		for j in range(0,8):
-			visualization[i,j] = ' ';
+			visualization[i,j] = ' '
 
 	for piece in piece_list:
-		# Load active pawns
-		if piece.is_active and piece.color == 'white' and piece.name == 'Pawn':
-				visualization[piece.file-1, piece.rank-1] = 'P'
+		if piece.is_active:
+			if piece.color == 'white':
+				if piece.name == 'Pawn':
+					visualization[piece.file-1, piece.rank-1] = 'P'
 
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Pawn':
-				visualization[piece.file-1, piece.rank-1] = 'p'
+				elif piece.name == 'Rook':
+					visualization[piece.file-1, piece.rank-1] = 'R'
 
-		elif piece.is_active and piece.color == 'white' and piece.name == 'Rook':
-				visualization[piece.file-1, piece.rank-1] = 'R'
+				elif piece.name == 'Knight':
+					visualization[piece.file-1, piece.rank-1] = 'N'
 
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Rook':
-				visualization[piece.file-1, piece.rank-1] = 'r'
+				elif piece.name == 'Bishop':
+					visualization[piece.file-1, piece.rank-1] = 'B'
+				
+				elif piece.name == 'Queen':
+					visualization[piece.file-1, piece.rank-1] = 'Q'
 
-		elif piece.is_active and piece.color == 'white' and piece.name == 'Knight':
-				visualization[piece.file-1, piece.rank-1] = 'N'
+				elif piece.name == 'King':
+					visualization[piece.file-1, piece.rank-1] = 'K'
 
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Knight':
-				visualization[piece.file-1, piece.rank-1] = 'n'
+			if piece.color == 'black':
+				if piece.name == 'Pawn':
+					visualization[piece.file-1, piece.rank-1] = 'p'
 
-		elif piece.is_active and piece.color == 'white' and piece.name == 'Bishop':
-				visualization[piece.file-1, piece.rank-1] = 'B'
+				elif piece.name == 'Rook':
+					visualization[piece.file-1, piece.rank-1] = 'r'
 
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Bishop':
-				visualization[piece.file-1, piece.rank-1] = 'b'
+				elif piece.name == 'Knight':
+					visualization[piece.file-1, piece.rank-1] = 'n'
 
-		elif piece.is_active and piece.color == 'white' and piece.name == 'Queen':
-				visualization[piece.file-1, piece.rank-1] = 'Q'
+				elif piece.name == 'Bishop':
+					visualization[piece.file-1, piece.rank-1] = 'b'
 
-		elif piece.is_active and piece.color == 'black' and piece.name == 'Queen':
-				visualization[piece.file-1, piece.rank-1] = 'q'
+				elif piece.name == 'Queen':
+					visualization[piece.file-1, piece.rank-1] = 'q'
 
-		elif piece.is_active and piece.color == 'white' and piece.name == 'King':
-				visualization[piece.file-1, piece.rank-1] = 'K'
-
-		elif piece.is_active and piece.color == 'black' and piece.name == 'King':
-				visualization[piece.file-1, piece.rank-1] = 'k'
+				elif piece.name == 'King':
+					visualization[piece.file-1, piece.rank-1] = 'k'
 
 
 	# Return visualization
@@ -199,17 +198,18 @@ def visualize_state(piece_list):
 
 def action_space(piece_list, player):
 
-	"""Determining available moves for evaluation"""
+	"""
+	Determining available moves for evaluation
 
-	# Args: (1) piece list, (2) player color
+	The output is a P x 56 matrix where P is the numieces & 56ber of p is the maximum
+	possible number of moves for any piece. For pieces which have less than  possible
+	moves, zeros are appended to the end of the row. A value of 1 indicates that a
+	move is available while a value of 0 means that it is not.
 
-	# The output is a P x 56 matrix where P is the number of pieces and 56 is the maximum
-	# possible number of moves for any piece. For pieces which have less than  possible
-	# moves, zeros are appended to the end of the row. A value of 1 indicates that a
-	# move is available while a value of 0 means that it is not.
+	See each pieces in Utils/Pieces/*.py for move glossary
 
-
-	# See pieces.py for move glossary
+	Return: action space
+	"""
 
 	# Initializing action space with dimensions P x 56
 	action_space = np.zeros((16,56))
@@ -218,7 +218,7 @@ def action_space(piece_list, player):
 	for i in range(0,16):
 		# If it is white's turn to move...
 		if player == 'white':
-			# Obtain vector of possible actions and write to corresponding row
+			# Obtain vector of possible actions & write to corresponding row
 			action_space[i,:] = piece_list[i].actions(piece_list)
 		else:
 			action_space[i,:] = piece_list[i+16].actions(piece_list)
@@ -228,22 +228,23 @@ def action_space(piece_list, player):
 
 def points(piece_list):
 
-	"""Calculating point differential for the given board state"""
+	"""
+	Calculating point differential for the given board state
 
-	# Args: (1) piece list
-	# Returns: differential (white points - black points)
+	The points are calculated via the standard chess value system:
+	Pawn = 1, King = 3, Bishop = 3, Rook = 5, Queen = 9
+	King = 100 (arbitrarily large)
 
-	# The points are calculated via the standard chess value system:
-	# Pawn = 1, King = 3, Bishop = 3, Rook = 5, Queen = 9
-	# King = 100 (arbitrarily large)
+	Returns: differential (white points - black points)
+	"""
 
 	differential = 0
-	# For all white pieces...
+	# For all white pieces
 	for i in range(0,16):
 		# If the piece is active, add its points to the counter
 		if piece_list[i].is_active:
 			differential = differential + piece_list[i].value
-	# For all black pieces...
+	# For all black pieces
 	for i in range(16,32):
 		# If the piece is active, subtract its points from the counter
 		if piece_list[i].is_active:

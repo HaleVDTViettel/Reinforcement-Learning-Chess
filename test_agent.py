@@ -5,14 +5,24 @@ import time as t
 import copy as c
 import os
 from Utils import utils as s
+import tensorflow as tf
+
+print("Setting memory growth for GPU...")
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+if physical_devices:
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+print("Memory growth set.")
+
+# disable tensorflow logging for clean output
+keras.utils.disable_interactive_logging()
 
 # ----------------------------------------------------
 # User-Defined Parameters
 # ----------------------------------------------------
 # Training
 NUM_TESTING = 100  # Number of testing steps
-HIDDEN_UNITS = 100  # Number of hidden units
-BATCH_SIZE = 5  # Batch size
+HIDDEN_UNITS = 512  # Number of hidden units
+BATCH_SIZE = 128  # Batch size
 
 # Simulation
 MAX_MOVES = 100  # Maximum number of moves
@@ -22,7 +32,7 @@ EPSILON = 0.0  # Defining epsilon for e-greedy policy (0 for testing -> greedy p
 LOAD_FILE = True  # Load trained model from saved checkpoint (True for testing)
 VISUALIZE = True  # Select True to visualize games and False to suppress game output
 PRINT = True  # Select True to print moves as text and False to suppress printing
-ALGEBRAIC = True  # Specify long algebraic notation (True) or descriptive text (False)
+ALGEBRAIC = False  # Specify long algebraic notation (True) or descriptive text (False)
 
 # ----------------------------------------------------
 # Data Paths
@@ -78,8 +88,11 @@ def generate_outcome(batch_size, max_moves, epsilon, visualize, print_move, alge
 
     for batch_step in range(batch_size):
         if visualize or print_move:
-            print("\n----------BEGIN GAME----------")
-            print(f"Game number: {batch_step}")
+            print("\033c", end="")
+            # print("Training Game Batch of Size 8192 with Epsilon 0.2")
+            print(f"Training Game Batch of Size {batch_size} with Epsilon {epsilon}")
+            print(f"-----------BEGIN GAME {batch_step+1}----------")
+            
         all_states = []
         all_returns = []
         pieces, initial_state, player, move = initialize_board(random=False, keep_prob=1.0)
@@ -102,8 +115,17 @@ def generate_outcome(batch_size, max_moves, epsilon, visualize, print_move, alge
                         temp_pieces = c.deepcopy(pieces)
                         move_piece(i, j, player, temp_pieces)
                         temp_board_state = s.board_state(temp_pieces)
-                        expected_return = model.predict(np.reshape(temp_board_state, (1, 768)))
-                        return_array[i, j] = expected_return
+                        for i in range(16):
+                            for j in range(56):
+                                if action_space[i, j] == 1:
+                                    temp_pieces = c.deepcopy(pieces)
+                                    move_piece(i, j, player, temp_pieces)
+                                    temp_board_state = s.board_state(temp_pieces)
+                                    # Predict Q-value for this specific state-action pair
+                                    q_value = model.predict([np.reshape(temp_board_state, (1, 768)), 
+                                                             np.array([[i*56 + j]])],
+                                                             workers=20, use_multiprocessing=True)
+                                    return_array[i, j] = q_value[0][0]  # Extract the single Q-value
             if player == 'black':
                 while True:
                     piece_index, move_index = r.randint(0, 15), r.randint(0, 55)
@@ -116,9 +138,11 @@ def generate_outcome(batch_size, max_moves, epsilon, visualize, print_move, alge
                 player = move_piece(piece_index, move_index, player, pieces, switch_player=True, print_move=print_move, algebraic=algebraic)
             move += 1
         if visualize or print_move:
-            print("----------END OF GAME----------")
+            print(f"----------END OF GAME {batch_step+1}----------")
+
         if all_returns[0] > 0:
             outcome_batch.append(1)
+            
         elif all_returns[0] == 0:
             outcome_batch.append(0)
         else:
@@ -128,16 +152,17 @@ def generate_outcome(batch_size, max_moves, epsilon, visualize, print_move, alge
 # ----------------------------------------------------
 # Importing Session Parameters
 # ----------------------------------------------------
-inputs = keras.Input(shape=(768,), name='Inputs')
-targets = keras.Input(shape=(1,), name='Targets')
+state_input = keras.layers.Input(shape=(768,))
+action_input = keras.layers.Input(shape=(1,), dtype='int32')
 
-# ----------------------------------------------------
-# Implementing Feedforward NN
-# ----------------------------------------------------
-hidden1 = keras.layers.Dense(HIDDEN_UNITS, activation='relu')(inputs)
-hidden2 = keras.layers.Dense(HIDDEN_UNITS, activation='relu')(hidden1)
-predictions = keras.layers.Dense(1, activation=None)(hidden2)
-model = keras.Model(inputs=inputs, outputs=predictions)
+hidden_layer1 = keras.layers.Dense(HIDDEN_UNITS, activation='relu')(state_input)
+hidden_layer2 = keras.layers.Dense(HIDDEN_UNITS, activation='relu')(hidden_layer1)
+q_values = keras.layers.Dense((16 * 56), activation='linear')(hidden_layer2)
+
+# Use the action input to select the Q-value for the taken action
+q_value = keras.layers.Lambda(lambda x: tf.gather(x[0], x[1], batch_dims=1))([q_values, action_input])
+
+model = keras.models.Model(inputs=[state_input, action_input], outputs=q_value)
 
 # ----------------------------------------------------
 # Run Session

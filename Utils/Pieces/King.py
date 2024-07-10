@@ -46,7 +46,7 @@ class King():
 
 		"""Determining possible actions for piece"""
 
-		# Requires: piece_list
+		# Args: piece_list
 		# Returns: numpy array
 
 		# The king may move one tile in any direction. The king may castle as a first move.
@@ -72,11 +72,11 @@ class King():
 			for i in range(0,4):
 				break_loop = False
 				for j in range(1,2):
-					# Condition (1)
-					if 0 < self.file+j*movement[i,0] < 9 and 0 < self.rank+j*movement[i,1] < 9:
+					# Case (1)
+					if 0 < self.file+j*movement[i,0] < 9 & 0 < self.rank+j*movement[i,1] < 9:
 						for piece in piece_list:
-							# Condition 2
-							if piece.is_active and piece.color == self.color and piece.file == self.file+j*movement[i,0] and piece.rank == self.rank+j*movement[i,1]:
+							# Case 2
+							if piece.is_active & piece.color == self.color & piece.file == self.file+j*movement[i,0] & piece.rank == self.rank+j*movement[i,1]:
 								break_loop = True
 					else: # If the index is no longer in bounds, break
 						break
@@ -97,11 +97,11 @@ class King():
 			for i in range(0,4):
 				break_loop = False
 				for j in range(1,2):
-					# Condition (1)
-					if 0 < self.file+j*movement[i,0] < 9 and 0 < self.rank+j*movement[i,1] < 9:
+					# Case (1)
+					if 0 < self.file+j*movement[i,0] < 9 & 0 < self.rank+j*movement[i,1] < 9:
 						for piece in piece_list:
-							# Condition 2
-							if piece.is_active and piece.color == self.color and piece.file == self.file+j*movement[i,0] and piece.rank == self.rank+j*movement[i,1]:
+							# Case 2
+							if piece.is_active & piece.color == self.color & piece.file == self.file+j*movement[i,0] & piece.rank == self.rank+j*movement[i,1]:
 								break_loop = True
 					else: # If the index is no longer in bounds, break
 						break
@@ -116,19 +116,19 @@ class King():
 			Castle = True
 
 			# Conditions:
-			# (1) If the king and kingside rook have not moved
+			# (1) If the king & kingside rook have not moved
 			# (2) There are no pieces in between them
 			# (3) The king is not in check
 
-			# Condition (1)
-			if self.move_count == 0 and ((self.color == 'white' and piece_list[7].move_count == 0) or (self.color == 'black' and piece_list[31].move_count == 0)):
+			# Case (1)
+			if self.move_count == 0 & ((self.color == 'white' & piece_list[7].move_count == 0) or (self.color == 'black' & piece_list[31].move_count == 0)):
 				for piece in piece_list:
-					# Condition (2)
-					if piece.is_active and piece.rank == self.rank and (piece.file == self.file+1 or piece.file == self.file+2):
+					# Case (2)
+					if piece.is_active & piece.rank == self.rank & (piece.file == self.file+1 or piece.file == self.file+2):
 						Castle = False
 						break
-					# Condition (3)
-					elif piece.is_active and piece.name != 'King' and piece.color != self.color and piece.actions(piece_list, True).size > 0 and (piece.actions(piece_list, True) == np.array([self.file, self.rank])).all(1).any():
+					# Case (3)
+					elif piece.is_active & piece.name != 'King' & piece.color != self.color & piece.actions(piece_list, True).size > 0 & (piece.actions(piece_list, True) == np.array([self.file, self.rank])).all(1).any():
 						Castle = False
 						break
 					else:
@@ -147,19 +147,19 @@ class King():
 			Castle = True
 
 			# Conditions:
-			# (1) If the king and queenside rook have not moved
+			# (1) If the king & queenside rook have not moved
 			# (2) There are no pieces in between them
 			# (3) The king is not in check
 
-			# Condition (1)
-			if self.move_count == 0 and ((self.color == 'white' and piece_list[0].move_count == 0) or (self.color == 'black' and piece_list[24].move_count == 0)):
+			# Case (1)
+			if self.move_count == 0 & ((self.color == 'white' & piece_list[0].move_count == 0) or (self.color == 'black' & piece_list[24].move_count == 0)):
 				for piece in piece_list:
-					# Condition (2)
-					if piece.is_active and piece.rank == self.rank and (piece.file == self.file-1 or piece.file == self.file-2 or piece.file == self.file-3):
+					# Case (2)
+					if piece.is_active & piece.rank == self.rank & (piece.file == self.file-1 or piece.file == self.file-2 or piece.file == self.file-3):
 						Castle = False
 						break
-					# Condition (3)
-					elif piece.is_active and piece.name != 'King' and piece.color != self.color and piece.actions(piece_list, True).size > 0 and (piece.actions(piece_list, True) == np.array([self.file, self.rank])).all(1).any():
+					# Case (3)
+					elif piece.is_active & piece.name != 'King' & piece.color != self.color & piece.actions(piece_list, True).size > 0 & (piece.actions(piece_list, True) == np.array([self.file, self.rank])).all(1).any():
 						Castle = False
 						break
 					else:
@@ -188,7 +188,7 @@ class King():
 
 		"""Moving piece's position"""
 
-		# Requires:	(1) action (element of action vector), (2) piece list, (3) print move? (4) algebraic notation?
+		# Args:	(1) action (element of action vector), (2) piece list, (3) print move? (4) algebraic notation?
 		# Returns:	void
 
 		# Temporarily save old position for the purposes of algebraic notation
@@ -245,7 +245,7 @@ class King():
 		# If a piece was in the destination tile, remove the piece
 		piece_remove = False
 		for piece in piece_list:
-			if piece.is_active and piece.color != self.color and piece.file == self.file and piece.rank == self.rank:
+			if piece.is_active & piece.color != self.color & piece.file == self.file & piece.rank == self.rank:
 				piece.remove()
 				piece_remove = True
 				remove_name = piece.name
@@ -253,51 +253,31 @@ class King():
 
 		# Print movement if indicated
 		file_list = ['a','b','c','d','e','f','g','h']
-		if print_move and algebraic:
-			if kcastle:
-				print("0-0")
-			elif qcastle:
-				print("0-0-0")
-			elif piece_remove:
-				print(self.symbol + file_list[old_file-1] + str(old_rank)+ " x " + file_list[self.file-1] + str(self.rank))
-			else:
-				print(self.symbol + file_list[old_file-1] + str(old_rank) + "-" + file_list[self.file-1] + str(self.rank))
-		elif print_move:
-			if kcastle:
-				print("Kingside Castle")
-			elif qcastle:
-				print("Queenside Castle")
-			elif piece_remove:
-				print(self.name + " to " + str(self.file) + "," + str(self.rank) + " taking " + remove_name)
-			else:
-				print(self.name + " to " + str(self.file) + "," + str(self.rank))
 
 		if print_move:
 			if algebraic:
 				if kcastle:
-					print("0-0", end=" "*20+"\r\n")
+					print("0-0", end=" "*20+"\r")
 				elif qcastle:
-					print("0-0-0", end=" "*20+"\r\n")
+					print("0-0-0", end=" "*20+"\r")
 				elif piece_remove:
-					print(f"{self.symbol}{file_list[old_file-1]}{old_rank} x {file_list[self.file-1]}{self.rank}", end=" "*20+"\r\n")
+					print(f"\n{self.symbol}{file_list[old_file-1]}{old_rank} x {file_list[self.file-1]}{self.rank}", end=" "*20+"\r")
 				else:
-					print(f"{self.symbol}{file_list[old_file-1]}{old_rank}-{file_list[self.file-1]}{self.rank}", end=" "*20+"\r\n")
+					print(f"\n{self.symbol}{file_list[old_file-1]}{old_rank}-{file_list[self.file-1]}{self.rank}", end=" "*20+"\r")
 			else:
 				if kcastle:
-					print("Kingside Castle", end=" "*20+"\r\n")
+					print("\nKingside Castle", end=" "*20+"\r")
 				elif qcastle:
-					print("Queenside Castle", end=" "*20+"\r\n")
+					print("\nQueenside Castle", end=" "*20+"\r")
 				elif piece_remove:
-					print(f"{self.name} to {self.file},{self.rank} taking {remove_name}", end=" "*20+"\r\n")
+					print(f"\n{self.name} to {self.file},{self.rank} taking {remove_name}", end=" "*20+"\r")
 				else:
-					print(f"{self.name} to {self.file},{self.rank}", end=" "*20+"\r\n")
-
-
+					print(f"\n{self.name} to {self.file},{self.rank}", end=" "*20+"\r")
 
 	def remove(self):
 
 		"""Removing piece from board"""
 
-		# Requires:	none
+		# Args:	none
 		# Returns:	void
 		self.is_active = False

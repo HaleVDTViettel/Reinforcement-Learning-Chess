@@ -1,7 +1,7 @@
 import platform
 import psutil
 import shutil
-
+import torch
 
 def get_system_info():
     uname = platform.uname()
@@ -23,7 +23,13 @@ def get_system_info():
         "Current Frequency": f"{psutil.cpu_freq().current:.2f}Mhz",
         "Total CPU Usage": f"{psutil.cpu_percent()}%",
     }
-    
+    gpu_info = {
+        "GPU": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "No GPU available",
+        "CUDA Version": torch.version.cuda,
+        "CUDNN Version": torch.backends.cudnn.version() if torch.cuda.is_available() else "No CUDNN available",
+        "GPU Count": torch.cuda.device_count() if torch.cuda.is_available() else "No GPU available",
+        "GPU Memory": f"{torch.cuda.get_device_properties(0).total_memory / (1024 ** 3):.2f}GB" if torch.cuda.is_available() else "No GPU available",
+    }
     # Memory info
     svmem = psutil.virtual_memory()
     memory_info = {
@@ -37,6 +43,7 @@ def get_system_info():
         "System Info": system_info,
         "CPU Info": cpu_info,
         "Memory Info": memory_info,
+        "GPU Info": gpu_info,
     }
 
 def print_system_info():

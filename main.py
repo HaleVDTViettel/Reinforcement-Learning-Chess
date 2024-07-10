@@ -15,9 +15,12 @@ from collections import deque
 from keras.optimizers import AdamW
 from Utils import utils as s
 from Utils import sysinfo as si
+
+# Set number of workers for parallel processing
+tf.config.threading.set_inter_op_parallelism_threads(20)
+tf.config.threading.set_intra_op_parallelism_threads(20)
 # disable tensorflow logging for clean output
 keras.utils.disable_interactive_logging()
-
 # set memory growth for GPU
 print("Setting memory growth for GPU...")
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
@@ -63,10 +66,10 @@ class DQNAgent:
         
         hidden_layer1 = keras.layers.Dense(self.hidden_units, activation='relu')(state_input)
         hidden_layer2 = keras.layers.Dense(self.hidden_units, activation='relu')(hidden_layer1)
-        q_values = keras.layers.Dense(self.action_size, activation='linear')(hidden_layer2)
+        prediction = keras.layers.Dense(self.action_size, activation='linear')(hidden_layer2)
 
         # Use the action input to select the Q-value for the taken action
-        q_value = keras.layers.Lambda(lambda x: tf.gather(x[0], x[1], batch_dims=1))([q_values, action_input])
+        q_value = keras.layers.Lambda(lambda x: tf.gather(x[0], x[1], batch_dims=1))([prediction, action_input])
 
         model = keras.models.Model(inputs=[state_input, action_input], outputs=q_value)
 
@@ -236,8 +239,8 @@ def generate_game(agent, batch_size, max_moves, epsilon, visualize, print_move, 
                     if action_space[i, j] == 1:
 
                         # Perform move and obtain temporary board state
-                        temp_pieces = c.deepcopy(pieces)                # Reset temporary pieces variable
-                        move_piece(i, j, player, temp_pieces)                # Perform temporary move
+                        temp_pieces = c.deepcopy(pieces)                 # Reset temporary pieces variable
+                        move_piece(i, j, player, temp_pieces)            # Perform temporary move
                         temp_board_state = s.board_state(temp_pieces)    # Obtain temporary state
 
                         # With temporary state, calculate expected return
@@ -316,7 +319,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-t",  "--trainsteps",   help="Number of training steps (Default 1000)",             type=int,   default=1000)
-    parser.add_argument("-u",  "--hidunits",     help="Number of hidden units (Default 100)",                type=int,   default=100)
+    parser.add_argument("-u",  "--hidunits",     help="Number of hidden units (Default 512)",                type=int,   default=512)
     parser.add_argument("-r",  "--learnrate",    help="Learning rate (Default 0.001)",                       type=float, default=0.001)
     parser.add_argument("-b",  "--batchsize",    help="Batch size (Default 32)",                             type=int,   default=32)
     parser.add_argument("-m",  "--maxmoves",     help="Maximum moves for MC simulations (Default 100)",      type=int,   default=100)
@@ -328,7 +331,6 @@ if __name__ == "__main__":
     parser.add_argument("-rd", "--rootdir",      help="Root directory for project",                          type=str,   default="./results")
     parser.add_argument("-sd", "--savedir",      help="Save directory for project",                          type=str,   default="checkpoints/model")
     parser.add_argument("-ld", "--loaddir",      help="Load directory for project",                          type=str,   default="checkpoints/model")
-    parser.add_argument("-w",  "--workers",      help="Number of workers for parallel processing",           type=int,   default=44)
 
     # Parse Arguments from Command Line
     args = parser.parse_args()
@@ -338,7 +340,6 @@ if __name__ == "__main__":
     hidden_units = args.hidunits
     learning_rate = args.learnrate
     batch_size = args.batchsize
-    workers = args.workers
 
     # Simulation Parameters
     max_moves = args.maxmoves
@@ -372,10 +373,6 @@ if __name__ == "__main__":
 
     # ----------------------------------------------------
 
-    # Set number of workers for parallel processing
-    tf.config.threading.set_inter_op_parallelism_threads(workers) 
-    tf.config.threading.set_intra_op_parallelism_threads(workers)
-
     # parse example: python main.py -t 1000 -u 512 -r 0.001 -b 4096 -m 3100 -e 0.2 -v True -p True -a True -l False -rd ./results -sd checkpoints/model -ld checkpoints/model
 
     """
@@ -402,6 +399,7 @@ if __name__ == "__main__":
     state_size = 768  # 8x8x12
     action_size = 16 * 56  # 16 pieces, 56 possible moves each
     agent = DQNAgent(state_size, action_size, hidden_units, learning_rate)
+    writer = tf.summary
 
     if load_file:
         agent.load(load_path)
@@ -457,3 +455,11 @@ if __name__ == "__main__":
         print("\r" + " " * 40 + "\r", end='')
         # Reset the stop_thread variable
         stop_thread = False
+    
+    # Write training loss to file
+    t_loss = np.array(t_loss)
+    with open(training_loss, 'a') as file_object:
+        np.savetxt(file_object, t_loss)
+
+    # Close the writer
+    writer.close()

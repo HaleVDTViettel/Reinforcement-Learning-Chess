@@ -36,7 +36,7 @@ class Knight():
 
 		"""Determining possible actions for piece"""
 
-		# Requires: piece_list
+		# Args: piece_list
 		# Returns: numpy array
 
 		# A knight may have any of 8 possible actions:
@@ -60,11 +60,11 @@ class Knight():
 			movement = np.array([[2,1],[2,-1],[1,2],[-1,2],[1,-2],[-1,-2],[-2,1],[-2,-1]])
 			for i in range(0,8):
 				continue_loop = False
-				# Condition (1)
-				if 0 < self.file+movement[i,0] < 9 and 0 < self.rank+movement[i,1] < 9:
+				# Case (1)
+				if 0 < self.file+movement[i,0] < 9 & 0 < self.rank+movement[i,1] < 9:
 					for piece in piece_list:
-						# Condition (2)
-						if piece.is_active and piece.color == self.color and piece.file == self.file+movement[i,0] and piece.rank == self.rank+movement[i,1]:
+						# Case (2)
+						if piece.is_active & piece.color == self.color & piece.file == self.file+movement[i,0] & piece.rank == self.rank+movement[i,1]:
 							continue_loop = True
 							break
 				else: # If the index is not in bounds, continue
@@ -90,7 +90,7 @@ class Knight():
 
 		"""Moving piece's position"""
 
-		# Requires:	(1) action (element of action vector), (2) piece list, (3) print move? (4) algebraic notation?
+		# Args:	(1) action (element of action vector), (2) piece list, (3) print move? (4) algebraic notation?
 		# Returns:	void
 
 		# Temporarily save old position for the purposes of algebraic notation
@@ -131,7 +131,7 @@ class Knight():
 		# If a piece was in the destination tile, remove the piece
 		piece_remove = False
 		for piece in piece_list:
-			if piece.is_active and piece.color != self.color and piece.file == self.file and piece.rank == self.rank:
+			if piece.is_active & piece.color != self.color & piece.file == self.file & piece.rank == self.rank:
 				piece.remove()
 				piece_remove = True
 				remove_name = piece.name
@@ -142,21 +142,20 @@ class Knight():
 		if print_move:
 			if algebraic:
 				if piece_remove:
-					print(f"{self.symbol}{file_list[old_file-1]}{old_rank} x {file_list[self.file-1]}{self.rank}", end=" "*20+"\r\n")
+					print(f"\n{self.symbol}{file_list[old_file-1]}{old_rank} x {file_list[self.file-1]}{self.rank}", end=" "*20+"\r")
 				else:
-					print(f"{self.symbol}{file_list[old_file-1]}{old_rank}-{file_list[self.file-1]}{self.rank}", end=" "*20+"\r\n")
+					print(f"\n{self.symbol}{file_list[old_file-1]}{old_rank}-{file_list[self.file-1]}{self.rank}", end=" "*20+"\r")
 			else:
 				if piece_remove:
-					print(f"{self.name} to {self.file},{self.rank} taking {remove_name}", end=" "*20+"\r\n")
+					print(f"\n{self.name} to {self.file},{self.rank} taking {remove_name}", end=" "*20+"\r")
 				else:
-					print(f"{self.name} to {self.file},{self.rank}", end=" "*20+"\r\n")
-
+					print(f"\n{self.name} to {self.file},{self.rank}", end=" "*20+"\r")
 
 
 	def remove(self):
 
 		"""Removing piece from board"""
 
-		# Requires:	none
+		# Args:	none
 		# Returns:	void
 		self.is_active = False
