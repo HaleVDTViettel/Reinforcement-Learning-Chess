@@ -45,10 +45,10 @@ class Pawn():
 					for i in range(0,4):
 							
 							# Case (1)
-							if i == 0 & 0 < self.file + movement[i,0] < 9 & 0 < self.rank + movement[i,1] < 9:
+							if i == 0 and 0 < self.file + movement[i,0] < 9 and 0 < self.rank + movement[i,1] < 9:
 								blocked = False
 								for piece in piece_list:
-									if piece.is_active & piece.file == self.file + movement[i,0] & piece.rank == self.rank + movement[i,1]:
+									if piece.is_active and piece.file == self.file + movement[i,0] and piece.rank == self.rank + movement[i,1]:
 										blocked = True
 										break
 								if blocked == False:
@@ -57,20 +57,20 @@ class Pawn():
 									
 							# Case (2)
 							if i == 2 or i == 3:
-								if 0 < self.file + movement[i,0] < 9 & 0 < self.rank + movement[i,1] < 9:
+								if 0 < self.file + movement[i,0] < 9 and 0 < self.rank + movement[i,1] < 9:
 									for piece in piece_list:
-										if piece.is_active & piece.color != self.color & piece.file == self.file + movement[i,0] & piece.rank == self.rank + movement[i,1]:
+										if piece.is_active and piece.color != self.color and piece.file == self.file + movement[i,0] and piece.rank == self.rank + movement[i,1]:
 											coordinates.append([self.file + movement[i,0], self.rank + movement[i,1]])
 											action_space[0,i] = 1
 											break
 							# Case (3)
-							if i == 1 & self.move_count == 0:
+							if i == 1 and self.move_count == 0:
 								for piece in piece_list:
 									blocked = False
-									if piece.is_active & piece.file == self.file + movement[i,0] & piece.rank == self.rank + movement[i,1]:
+									if piece.is_active and piece.file == self.file + movement[i,0] and piece.rank == self.rank + movement[i,1]:
 										blocked = True
 										break
-									elif piece.is_active & piece.file == self.file + movement[i,0] & piece.rank == self.rank + movement[i,1] - 1:
+									elif piece.is_active and piece.file == self.file + movement[i,0] and piece.rank == self.rank + movement[i,1] - 1:
 										blocked = True
 										break
 								if blocked == False:
@@ -84,10 +84,10 @@ class Pawn():
 										 [-1,-1]])
 
 					for i in range(0,4):
-							if i == 0 & 0 < self.file + movement[i,0] < 9 & 0 < self.rank + movement[i,1] < 9:
+							if i == 0 and 0 < self.file + movement[i,0] < 9 and 0 < self.rank + movement[i,1] < 9:
 								for piece in piece_list:
 									blocked = False
-									if piece.is_active & piece.file == self.file + movement[i,0] & piece.rank == self.rank + movement[i,1]:
+									if piece.is_active and piece.file == self.file + movement[i,0] and piece.rank == self.rank + movement[i,1]:
 										blocked = True
 										break
 								if blocked == False:
@@ -95,20 +95,20 @@ class Pawn():
 									action_space[0,i] = 1
 							# Case (2)
 							if i == 2 or i == 3:
-								if 0 < self.file + movement[i,0] < 9 & 0 < self.rank + movement[i,1] < 9:
+								if 0 < self.file + movement[i,0] < 9 and 0 < self.rank + movement[i,1] < 9:
 									for piece in piece_list:
-										if piece.is_active & piece.color != self.color & piece.file == self.file + movement[i,0] & piece.rank == self.rank + movement[i,1]:
+										if piece.is_active and piece.color != self.color and piece.file == self.file + movement[i,0] and piece.rank == self.rank + movement[i,1]:
 											coordinates.append([self.file + movement[i,0], self.rank + movement[i,1]])
 											action_space[0,i] = 1
 											break
 							# Case (3)
-							if i == 1 & self.move_count == 0:
+							if i == 1 and self.move_count == 0:
 								for piece in piece_list:
 									blocked = False
-									if piece.is_active & piece.file == self.file + movement[i,0] & piece.rank == self.rank + movement[i,1]:
+									if piece.is_active and piece.file == self.file + movement[i,0] and piece.rank == self.rank + movement[i,1]:
 										blocked = True
 										break
-									elif piece.is_active & piece.file == self.file + movement[i,0] & piece.rank == self.rank + movement[i,1] + 1:
+									elif piece.is_active and piece.file == self.file + movement[i,0] and piece.rank == self.rank + movement[i,1] + 1:
 										blocked = True
 										break
 								if blocked == False:
@@ -117,10 +117,10 @@ class Pawn():
 
 				# Can pawn promote to queen?
 				Promote = False
-				# If the pawn is white & has rank 8 or is black & has rank 1, it can promote to queen
-				if self.color == 'white' & self.rank == 8:
+				# If the pawn is white and has rank 8 or is black and has rank 1, it can promote to queen
+				if self.color == 'white' and self.rank == 8:
 					Promote = True
-				elif self.color == 'black' & self.rank == 1:
+				elif self.color == 'black' and self.rank == 1:
 					Promote = True
 				# If AttackRight is True, append special coordinates
 				if Promote:
@@ -140,7 +140,7 @@ class Pawn():
 		# IF THE PIECE IS A QUEEN (HAS BEEN PROMOTED)
 		else:
 			"""
-			The queen's movement is a combination of bishop & rook
+			The queen's movement is a combination of bishop and rook
 
 			VERTICAL/HORIZONTAL
 			For each tile along one of the four movement vectors, append coordinate if:
@@ -175,13 +175,13 @@ class Pawn():
 					break_loop = False
 					for j in range(1,8):
 						# Case (1)
-						if 0 < self.file + j * movement[i,0] < 9 & 0 < self.rank + j * movement[i,1] < 9:
+						if 0 < self.file + j * movement[i,0] < 9 and 0 < self.rank + j * movement[i,1] < 9:
 							for piece in piece_list:
 								# Case 2
-								if piece.is_active & piece.color == self.color & piece.file == self.file + j * movement[i,0] & piece.rank == self.rank + j * movement[i,1]:
+								if piece.is_active and piece.color == self.color and piece.file == self.file + j * movement[i,0] and piece.rank == self.rank + j * movement[i,1]:
 									break_loop = True
 								# Case 3
-								if piece.is_active & piece.color != self.color & piece.file == self.file + (j-1) * movement[i,0] & piece.rank == self.rank + (j-1) * movement[i,1]:
+								if piece.is_active and piece.color != self.color and piece.file == self.file + (j-1) * movement[i,0] and piece.rank == self.rank + (j-1) * movement[i,1]:
 									break_loop = True
 						else: # If the index is no longer in bounds, break
 							break
@@ -207,13 +207,13 @@ class Pawn():
 					break_loop = False
 					for j in range(1,8):
 						# Case (1)
-						if 0 < self.file + j * movement[i,0] < 9 & 0 < self.rank + j * movement[i,1] < 9:
+						if 0 < self.file + j * movement[i,0] < 9 and 0 < self.rank + j * movement[i,1] < 9:
 							for piece in piece_list:
 								# Case 2
-								if piece.is_active & piece.color == self.color & piece.file == self.file + j * movement[i,0] & piece.rank == self.rank + j * movement[i,1]:
+								if piece.is_active and piece.color == self.color and piece.file == self.file + j * movement[i,0] and piece.rank == self.rank + j * movement[i,1]:
 									break_loop = True
 								# Case 3
-								if piece.is_active & piece.color != self.color & piece.file == self.file + (j-1) * movement[i,0] & piece.rank == self.rank + (j-1) * movement[i,1]:
+								if piece.is_active and piece.color != self.color and piece.file == self.file + (j-1) * movement[i,0] and piece.rank == self.rank + (j-1) * movement[i,1]:
 									break_loop = True
 						else: # If the index is no longer in bounds, break
 							break
@@ -340,7 +340,7 @@ class Pawn():
 		# If a piece was in the destination tile, remove the piece
 		piece_remove = False
 		for piece in piece_list:
-			if piece.is_active & piece.color != self.color & piece.file == self.file & piece.rank == self.rank:
+			if piece.is_active and piece.color != self.color and piece.file == self.file and piece.rank == self.rank:
 				piece.remove()
 				piece_remove = True
 				remove_name = piece.name

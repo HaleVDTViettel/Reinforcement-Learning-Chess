@@ -73,10 +73,10 @@ class King():
 				break_loop = False
 				for j in range(1,2):
 					# Case (1)
-					if 0 < self.file+j*movement[i,0] < 9 & 0 < self.rank+j*movement[i,1] < 9:
+					if 0 < self.file+j*movement[i,0] < 9 and 0 < self.rank+j*movement[i,1] < 9:
 						for piece in piece_list:
 							# Case 2
-							if piece.is_active & piece.color == self.color & piece.file == self.file+j*movement[i,0] & piece.rank == self.rank+j*movement[i,1]:
+							if piece.is_active and piece.color == self.color and piece.file == self.file+j*movement[i,0] and piece.rank == self.rank+j*movement[i,1]:
 								break_loop = True
 					else: # If the index is no longer in bounds, break
 						break
@@ -98,10 +98,10 @@ class King():
 				break_loop = False
 				for j in range(1,2):
 					# Case (1)
-					if 0 < self.file+j*movement[i,0] < 9 & 0 < self.rank+j*movement[i,1] < 9:
+					if 0 < self.file+j*movement[i,0] < 9 and 0 < self.rank+j*movement[i,1] < 9:
 						for piece in piece_list:
 							# Case 2
-							if piece.is_active & piece.color == self.color & piece.file == self.file+j*movement[i,0] & piece.rank == self.rank+j*movement[i,1]:
+							if piece.is_active and piece.color == self.color and piece.file == self.file+j*movement[i,0] and piece.rank == self.rank+j*movement[i,1]:
 								break_loop = True
 					else: # If the index is no longer in bounds, break
 						break
@@ -116,19 +116,19 @@ class King():
 			Castle = True
 
 			# Conditions:
-			# (1) If the king & kingside rook have not moved
+			# (1) If the king and kingside rook have not moved
 			# (2) There are no pieces in between them
 			# (3) The king is not in check
 
 			# Case (1)
-			if self.move_count == 0 & ((self.color == 'white' & piece_list[7].move_count == 0) or (self.color == 'black' & piece_list[31].move_count == 0)):
+			if self.move_count == 0 and ((self.color == 'white' and piece_list[7].move_count == 0) or (self.color == 'black' and piece_list[31].move_count == 0)):
 				for piece in piece_list:
 					# Case (2)
-					if piece.is_active & piece.rank == self.rank & (piece.file == self.file+1 or piece.file == self.file+2):
+					if piece.is_active and piece.rank == self.rank and (piece.file == self.file+1 or piece.file == self.file+2):
 						Castle = False
 						break
 					# Case (3)
-					elif piece.is_active & piece.name != 'King' & piece.color != self.color & piece.actions(piece_list, True).size > 0 & (piece.actions(piece_list, True) == np.array([self.file, self.rank])).all(1).any():
+					elif piece.is_active and piece.name != 'King' and piece.color != self.color and piece.actions(piece_list, True).size > 0 and (piece.actions(piece_list, True) == np.array([self.file, self.rank])).all(1).any():
 						Castle = False
 						break
 					else:
@@ -147,19 +147,19 @@ class King():
 			Castle = True
 
 			# Conditions:
-			# (1) If the king & queenside rook have not moved
+			# (1) If the king and queenside rook have not moved
 			# (2) There are no pieces in between them
 			# (3) The king is not in check
 
 			# Case (1)
-			if self.move_count == 0 & ((self.color == 'white' & piece_list[0].move_count == 0) or (self.color == 'black' & piece_list[24].move_count == 0)):
+			if self.move_count == 0 and ((self.color == 'white' and piece_list[0].move_count == 0) or (self.color == 'black' and piece_list[24].move_count == 0)):
 				for piece in piece_list:
 					# Case (2)
-					if piece.is_active & piece.rank == self.rank & (piece.file == self.file-1 or piece.file == self.file-2 or piece.file == self.file-3):
+					if piece.is_active and piece.rank == self.rank and (piece.file == self.file-1 or piece.file == self.file-2 or piece.file == self.file-3):
 						Castle = False
 						break
 					# Case (3)
-					elif piece.is_active & piece.name != 'King' & piece.color != self.color & piece.actions(piece_list, True).size > 0 & (piece.actions(piece_list, True) == np.array([self.file, self.rank])).all(1).any():
+					elif piece.is_active and piece.name != 'King' and piece.color != self.color and piece.actions(piece_list, True).size > 0 and (piece.actions(piece_list, True) == np.array([self.file, self.rank])).all(1).any():
 						Castle = False
 						break
 					else:
@@ -245,7 +245,7 @@ class King():
 		# If a piece was in the destination tile, remove the piece
 		piece_remove = False
 		for piece in piece_list:
-			if piece.is_active & piece.color != self.color & piece.file == self.file & piece.rank == self.rank:
+			if piece.is_active and piece.color != self.color and piece.file == self.file and piece.rank == self.rank:
 				piece.remove()
 				piece_remove = True
 				remove_name = piece.name
