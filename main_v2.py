@@ -1,9 +1,8 @@
 import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore")
 
 import os
 import time
-import keras
 import argparse
 import time as t
 import copy as c
@@ -18,12 +17,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.optim.lr_scheduler import StepLR
 
 print("Getting system information...")
-system_info = si.print_system_info()
+si.print_system_info()
 print("System information obtained.")
 print(f"_"*50)
-
 
 stop_thread = False
 
@@ -62,7 +61,7 @@ class DQNModel(nn.Module):
 
         if action is not None:
             # If action is provided, return the Q-value for the taken action
-            q_value = q_values.gather(1, action.unsqueeze(-1)).squeeze(-1)
+            q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
             return q_value
         else:
             # If no action is provided, return all Q-values
@@ -87,13 +86,15 @@ class DQNAgent:
         
         self.model = DQNModel(state_size, action_size, hidden_units).to(self.device)
         self.target_model = DQNModel(state_size, action_size, hidden_units).to(self.device)
-
         self.optimizer = optim.AdamW(self.model.parameters(), 
                                      lr=learning_rate, 
                                      betas=(0.9, 0.999), 
                                      eps=1e-07, 
                                      weight_decay=0.01, 
                                      amsgrad=True)
+        self.scheduler = StepLR(self.optimizer, 
+                                step_size=10,
+                                gamma=0.725)
 
         self.update_target_model()
 
@@ -110,6 +111,7 @@ class DQNAgent:
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
+        # Epsilon-greedy policy for action selection
         if np.random.rand() <= self.epsilon:
             return r.randrange(self.action_size), None
         
@@ -134,14 +136,21 @@ class DQNAgent:
         dones = torch.FloatTensor(np.array(dones)).to(self.device)
 
         current_q_values = self.model(states, actions)
+        # compute the Q-values for the next states
+        # The max(1)[0] part selects the maximum Q-value 
+        # for each state (the best action) along the action dimension. 
+        # This is used to estimate the maximum future reward.
         next_q_values = self.target_model(next_states).max(1)[0]
+        # target_q_values = rewards + γ × next_q_values × (1 − dones)
+        # This incorporates the observed reward and the discounted future reward, 
+        # only if the episode is not done (indicated by dones).
         target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
 
         loss = self.criterion(current_q_values, target_q_values.detach())
 
         self.optimizer.zero_grad()
         loss.backward()
-        self.optimizer.step()
+        self.scheduler.step()
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
@@ -214,16 +223,18 @@ def generate_game(agent, batch_size, max_moves, epsilon, visualize, print_move, 
             # print("Training Game Batch of Size 8192 with Epsilon 0.2")
             print(f"Training Game Batch of Size {batch_size} with Epsilon {epsilon}")
             print(f"-----------BEGIN GAME {batch_step+1}----------")
+            si.print_system_info()
+            print(f"_"*50)
 
         # ----------------------------------------------------
         # Initialize Board State
         # ----------------------------------------------------
-        # Create placeholders for board states and return for each state
+        # placeholders for board states and return for each state
         all_states = []
         all_returns = []
 
         # Generating board parameters
-        pieces, initial_state, player, move = initialize_board(random=True, keep_prob=0.65)
+        pieces, initial_state, player, move = initialize_board(random=False, keep_prob=0.65)
         point_diff_0 = s.points(pieces)
 
 
@@ -318,7 +329,11 @@ def generate_game(agent, batch_size, max_moves, epsilon, visualize, print_move, 
 
         feature_batches.append(initial_state)
         label_batches.append(all_returns[0])
-
+    # After the game loop
+    final_point_diff = s.points(pieces) - point_diff_0
+    terminal_reward = 100 if final_point_diff > 0 else -100 if final_point_diff < 0 else 0
+    for i in range(len(all_returns)):
+        all_returns[i] += terminal_reward
     # Return features and labels
     feature_batches = torch.FloatTensor(np.array(feature_batches)).to(agent.device)
     label_batches = torch.FloatTensor(np.array(label_batches)).to(agent.device)
@@ -428,16 +443,16 @@ if __name__ == "__main__":
         # Initialize training loss
         t_loss = []
         # Generate a batch of training data
-        feature_batch, label_batch = generate_game(agent, batch_size, max_moves, epsilon, visualize, print_moves, algebraic)
+        state_batch , action_batch = generate_game(agent, batch_size, max_moves, epsilon, visualize, print_moves, algebraic)
 
         # Train the agent on this batch
         loss = 0
-        for state, target_value in zip(feature_batch, label_batch):
+        for state, target_value in zip(state_batch , action_batch):
             state = state.cpu().numpy()
             action, _ = agent.act(state)
             next_state = state # Use the same state for next_state as we don't have it
-
-            agent.remember(state, action, target_value.item(), state, False)  # Use the same state for next_state as we don't have it
+            agent.remember(state, action, target_value.item(), state, False)
+            
             if len(agent.memory) > batch_size:
                 loss += agent.replay(batch_size)
 
