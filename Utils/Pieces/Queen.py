@@ -38,7 +38,7 @@ class Queen():
 		Args: piece_list
 		Returns: numpy array
 
-		# The queen's movement is a combination of bishop & rook
+		# The queen's movement is a combination of bishop and rook
 
 		# VERTICAL/HORIZONTAL
 		# For each tile along one of the four movement vectors, append coordinate if:
@@ -63,13 +63,13 @@ class Queen():
 				break_loop = False
 				for j in range(1,8):
 					# Case (1)
-					if 0 < self.file+j*movement[i,0] < 9 & 0 < self.rank+j*movement[i,1] < 9:
+					if 0 < self.file+j*movement[i,0] < 9 and 0 < self.rank+j*movement[i,1] < 9:
 						for piece in piece_list:
 							# Case 2
-							if piece.is_active & piece.color == self.color & piece.file == self.file+j*movement[i,0] & piece.rank == self.rank+j*movement[i,1]:
+							if piece.is_active and piece.color == self.color and piece.file == self.file+j*movement[i,0] and piece.rank == self.rank+j*movement[i,1]:
 								break_loop = True
 							# Case 3
-							if piece.is_active & piece.color != self.color & piece.file == self.file+(j-1)*movement[i,0] & piece.rank == self.rank+(j-1)*movement[i,1]:
+							if piece.is_active and piece.color != self.color and piece.file == self.file+(j-1)*movement[i,0] and piece.rank == self.rank+(j-1)*movement[i,1]:
 								break_loop = True
 					else: # If the index is no longer in bounds, break
 						break
@@ -92,13 +92,13 @@ class Queen():
 				break_loop = False
 				for j in range(1,8):
 					# Case (1)
-					if 0 < self.file+j*movement[i,0] < 9 & 0 < self.rank+j*movement[i,1] < 9:
+					if 0 < self.file+j*movement[i,0] < 9 and 0 < self.rank+j*movement[i,1] < 9:
 						for piece in piece_list:
 							# Case 2
-							if piece.is_active & piece.color == self.color & piece.file == self.file+j*movement[i,0] & piece.rank == self.rank+j*movement[i,1]:
+							if piece.is_active and piece.color == self.color and piece.file == self.file+j*movement[i,0] and piece.rank == self.rank+j*movement[i,1]:
 								break_loop = True
 							# Case 3
-							if piece.is_active & piece.color != self.color & piece.file == self.file+(j-1)*movement[i,0] & piece.rank == self.rank+(j-1)*movement[i,1]:
+							if piece.is_active and piece.color != self.color and piece.file == self.file+(j-1)*movement[i,0] and piece.rank == self.rank+(j-1)*movement[i,1]:
 								break_loop = True
 					else: # If the index is no longer in bounds, break
 						break
@@ -167,7 +167,7 @@ class Queen():
 		# If a piece was in the destination tile, remove the piece
 		piece_remove = False
 		for piece in piece_list:
-			if piece.is_active & piece.color != self.color & piece.file == self.file & piece.rank == self.rank:
+			if piece.is_active and piece.color != self.color and piece.file == self.file and piece.rank == self.rank:
 				piece.remove()
 				piece_remove = True
 				remove_name = piece.name

@@ -61,10 +61,10 @@ class Knight():
 			for i in range(0,8):
 				continue_loop = False
 				# Case (1)
-				if 0 < self.file+movement[i,0] < 9 & 0 < self.rank+movement[i,1] < 9:
+				if 0 < self.file+movement[i,0] < 9 and 0 < self.rank+movement[i,1] < 9:
 					for piece in piece_list:
 						# Case (2)
-						if piece.is_active & piece.color == self.color & piece.file == self.file+movement[i,0] & piece.rank == self.rank+movement[i,1]:
+						if piece.is_active and piece.color == self.color and piece.file == self.file+movement[i,0] and piece.rank == self.rank+movement[i,1]:
 							continue_loop = True
 							break
 				else: # If the index is not in bounds, continue
@@ -131,7 +131,7 @@ class Knight():
 		# If a piece was in the destination tile, remove the piece
 		piece_remove = False
 		for piece in piece_list:
-			if piece.is_active & piece.color != self.color & piece.file == self.file & piece.rank == self.rank:
+			if piece.is_active and piece.color != self.color and piece.file == self.file and piece.rank == self.rank:
 				piece.remove()
 				piece_remove = True
 				remove_name = piece.name

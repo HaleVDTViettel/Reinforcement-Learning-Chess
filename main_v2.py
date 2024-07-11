@@ -10,24 +10,15 @@ import copy as c
 import threading
 import numpy as np
 import random as r
-import tensorflow as tf
 from collections import deque
-from keras.optimizers import AdamW
 from Utils import utils as s
 from Utils import sysinfo as si
 
-# Set number of workers for parallel processing
-tf.config.threading.set_inter_op_parallelism_threads(20)
-tf.config.threading.set_intra_op_parallelism_threads(20)
-# disable tensorflow logging for clean output
-keras.utils.disable_interactive_logging()
-# set memory growth for GPU
-print("Setting memory growth for GPU...")
-physical_devices = tf.config.experimental.list_physical_devices('GPU')
-if physical_devices:
-    tf.config.experimental.set_memory_growth(physical_devices[0], True)
-print("Memory growth set.")
-# get system information
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
+
 print("Getting system information...")
 system_info = si.print_system_info()
 print("System information obtained.")
@@ -45,86 +36,126 @@ def print_time():
         print(f"Elapsed time: {elapsed_time:.2f} seconds", end='\r')
         time.sleep(.1)
 
+class DQNModel(nn.Module):
+    def __init__(self, state_size, action_size, hidden_units):
+        super(DQNModel, self).__init__()
+        self.state_size = state_size
+        self.action_size = action_size
+        self.hidden_units = hidden_units
+
+        # board state_size is (8, 8, 12)
+        self.conv1 = nn.Conv2d(12, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(64 * 8 * 8, hidden_units)
+        self.fc2 = nn.Linear(hidden_units, hidden_units)
+        self.fc3 = nn.Linear(hidden_units, action_size)
+
+    def forward(self, state, action=None):
+        # Reshape state to (batch_size, channels, height, width)
+        x = state.view(-1, 12, 8, 8)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = x.view(x.size(0), -1)  # Flatten
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        q_values = self.fc3(x)
+
+        if action is not None:
+            # If action is provided, return the Q-value for the taken action
+            q_value = q_values.gather(1, action.unsqueeze(-1)).squeeze(-1)
+            return q_value
+        else:
+            # If no action is provided, return all Q-values
+            return q_values
+    
 class DQNAgent:
     def __init__(self, state_size, action_size, hidden_units, learning_rate):
         self.state_size = state_size
         self.action_size = action_size
         self.hidden_units = hidden_units
+
         self.memory = deque(maxlen=2000)
+
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0   # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
         self.learning_rate = learning_rate
-        self.model = self._build_model()
-        self.target_model = self._build_model()
+
+        self.criterion = nn.L1Loss()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        self.model = DQNModel(state_size, action_size, hidden_units).to(self.device)
+        self.target_model = DQNModel(state_size, action_size, hidden_units).to(self.device)
+
+        self.optimizer = optim.AdamW(self.model.parameters(), 
+                                     lr=learning_rate, 
+                                     betas=(0.9, 0.999), 
+                                     eps=1e-07, 
+                                     weight_decay=0.01, 
+                                     amsgrad=True)
+
         self.update_target_model()
 
-    def _build_model(self):
-        state_input = keras.layers.Input(shape=(self.state_size,))
-        action_input = keras.layers.Input(shape=(1,), dtype='int32')
-        
-        hidden_layer1 = keras.layers.Dense(self.hidden_units, activation='relu')(state_input)
-        hidden_layer2 = keras.layers.Dense(self.hidden_units, activation='relu')(hidden_layer1)
-        prediction = keras.layers.Dense(self.action_size, activation='linear')(hidden_layer2)
-
-        # Use the action input to select the Q-value for the taken action
-        q_value = keras.layers.Lambda(lambda x: tf.gather(x[0], x[1], batch_dims=1))([prediction, action_input])
-
-        model = keras.models.Model(inputs=[state_input, action_input], outputs=q_value)
-
-        model.compile(optimizer=keras.optimizers.AdamW(learning_rate=self.learning_rate, 
-                                                    beta_1=0.9, 
-                                                    beta_2=0.999, 
-                                                    epsilon=1e-07, 
-                                                    weight_decay=0.01, 
-                                                    amsgrad=True),
-                    loss='mse')
-        return model
-
     def update_target_model(self):
-        self.target_model.set_weights(self.model.get_weights())
+        self.target_model.load_state_dict(self.model.state_dict())
 
     def remember(self, state, action, reward, next_state, done):
+        # Move tensors to CPU if they're on GPU
+        if isinstance(state, torch.Tensor):
+            state = state.cpu().numpy()
+        if isinstance(next_state, torch.Tensor):
+            next_state = next_state.cpu().numpy()
+        
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:
             return r.randrange(self.action_size), None
         
-        state = np.reshape(state, (1, self.state_size))
-        action_input = np.array([[0]])
-        q_values = self.model.predict([state, action_input])
-        action = np.argmax(q_values)
+        if isinstance(state, np.ndarray):
+            state = torch.FloatTensor(state)
         
-        return action, q_values.flatten()    
+        state = state.unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            q_values = self.model(state)
+        action = q_values.argmax().item()
+        
+        return action, q_values.cpu().numpy().flatten()
 
     def replay(self, batch_size):
-        # print("Replaying...")
         minibatch = r.sample(self.memory, batch_size)
-        states = np.array([experience[0] for experience in minibatch])
-        actions = np.array([experience[1] for experience in minibatch])
-        rewards = np.array([experience[2] for experience in minibatch])
-        next_states = np.array([experience[3] for experience in minibatch])
-        dones = np.array([experience[4] for experience in minibatch])
+        states, actions, rewards, next_states, dones = zip(*minibatch)
 
-        targets = rewards
-        
-        history = self.model.fit([states, actions], targets, epochs=10, verbose=0, use_multiprocessing=True, workers=20)
-        
+        states = torch.FloatTensor(np.array(states)).to(self.device)
+        actions = torch.LongTensor(np.array(actions)).to(self.device)
+        rewards = torch.FloatTensor(np.array(rewards)).to(self.device)
+        next_states = torch.FloatTensor(np.array(next_states)).to(self.device)
+        dones = torch.FloatTensor(np.array(dones)).to(self.device)
+
+        current_q_values = self.model(states, actions)
+        next_q_values = self.target_model(next_states).max(1)[0]
+        target_q_values = rewards + (self.gamma * next_q_values * (1 - dones))
+
+        loss = self.criterion(current_q_values, target_q_values.detach())
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
-        # print("Replay done.")
-        return history.history['loss'][0]
+
+        return loss.item()
 
     def load(self, name):
         print(f"Loading model from {name}...")
-        self.model.load_weights(f"{name}.h5")
+        self.model.load_state_dict(torch.load(f"{name}.pth"))
         print("Model loaded.")
 
     def save(self, name):
         print(f"Saving model to {name}...")
-        self.model.save_weights(f"{name}.h5")
+        torch.save(self.model.state_dict(), f"{name}.pth")
         print("Model saved.")
 
 def flatten_state(board_state):
@@ -243,9 +274,10 @@ def generate_game(agent, batch_size, max_moves, epsilon, visualize, print_move, 
                         move_piece(i, j, player, temp_pieces)            # Perform temporary move
                         temp_board_state = s.board_state(temp_pieces)    # Obtain temporary state
 
-                        # With temporary state, calculate expected return
-                        expected_return = agent.model.predict([np.reshape(temp_board_state, (1, 768)), np.array([[0]])])
-                        # Estimated return to return_array
+                        # Convert to tensor and move to correct device
+                        temp_state = torch.FloatTensor(temp_board_state).to(agent.device)
+                        with torch.no_grad():
+                            expected_return = agent.model(temp_state.unsqueeze(0)).squeeze(0).max().item()
                         return_array[i, j] = expected_return
 
 
@@ -288,25 +320,9 @@ def generate_game(agent, batch_size, max_moves, epsilon, visualize, print_move, 
         label_batches.append(all_returns[0])
 
     # Return features and labels
-    feature_batches = np.array(feature_batches)
-    label_batches = np.array(label_batches)
+    feature_batches = torch.FloatTensor(np.array(feature_batches)).to(agent.device)
+    label_batches = torch.FloatTensor(np.array(label_batches)).to(agent.device)
     return feature_batches, label_batches
-
-class Callback(tf.keras.callbacks.Callback):
-    SHOW_NUMBER = 10
-    counter = 0
-    epoch = 0
-
-    def on_epoch_begin(self, epoch, logs=None):
-        self.epoch = epoch
-
-    def on_train_batch_end(self, batch, logs=None):
-        if self.counter == self.SHOW_NUMBER or self.epoch == 1:
-            print('Epoch: ' + str(self.epoch) + ' loss: ' + str(logs['loss']))
-            if self.epoch > 1:
-                self.counter = 0
-        self.counter += 1
-
 
 if __name__ == "__main__":
 
@@ -398,7 +414,6 @@ if __name__ == "__main__":
     state_size = 768  # 8x8x12
     action_size = 16 * 56  # 16 pieces, 56 possible moves each
     agent = DQNAgent(state_size, action_size, hidden_units, learning_rate)
-    writer = tf.summary
 
     if load_file:
         agent.load(load_path)
@@ -418,9 +433,11 @@ if __name__ == "__main__":
         # Train the agent on this batch
         loss = 0
         for state, target_value in zip(feature_batch, label_batch):
-            state = flatten_state(state)
+            state = state.cpu().numpy()
             action, _ = agent.act(state)
-            agent.remember(state, action, target_value, state, False)  # Use the same state for next_state as we don't have it
+            next_state = state # Use the same state for next_state as we don't have it
+
+            agent.remember(state, action, target_value.item(), state, False)  # Use the same state for next_state as we don't have it
             if len(agent.memory) > batch_size:
                 loss += agent.replay(batch_size)
 
@@ -459,6 +476,3 @@ if __name__ == "__main__":
     t_loss = np.array(t_loss)
     with open(training_loss, 'a') as file_object:
         np.savetxt(file_object, t_loss)
-
-    # Close the writer
-    writer.close()
