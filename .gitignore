@@ -166,3 +166,5 @@ checkpoints/
 
 # results
 results/
+
+training_loss.txt

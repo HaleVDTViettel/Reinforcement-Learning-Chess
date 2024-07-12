@@ -366,9 +366,16 @@ class Pawn():
 
 
 	def remove(self):
+		"""
+		Removes the piece from the board.
 
-		"""Removing piece from board"""
+		This method sets the 'is_active' attribute of the piece to False, effectively
+		marking it as inactive and removing it from the game.
 
-		# Args:	none
-		# Returns:	void
+		Args:
+			None
+
+		Returns:
+			None
+		"""
 		self.is_active = False

@@ -6,7 +6,17 @@ class Rook():
 
 	def __init__(self, color, start_file, start_rank):
 
-		"""Defining initial attributes of piece"""
+		"""
+		Initialize a Rook piece with its initial attributes.
+
+		Parameters:
+		color (str): The color of the piece ('white' or 'black').
+		start_file (int): The initial vertical column of the piece (a = 1 = queenside, h = 8 = kingside).
+		start_rank (int): The initial horizontal row of the piece (1 = white, 8 = black).
+
+		Returns:
+		None
+		"""
 
 		# Piece Attributes
 		self.name = 'Rook'		# Name
@@ -34,10 +44,17 @@ class Rook():
 	#  [file2 rank2]...]
 	def actions(self, piece_list, return_coordinates=False):
 
-		"""Determining possible actions for piece"""	
+		"""
+		Determines the possible actions for the rook piece.
 
-		# Args: piece_list
-		# Returns: numpy array
+		Parameters:
+		piece_list (list): A list of all pieces on the board.
+		return_coordinates (bool, optional): If True, returns the coordinates of possible moves. Defaults to False.
+
+		Returns:
+		numpy.ndarray: A 1x56 numpy array representing the possible actions for the rook. If return_coordinates is True,
+		returns a 2D numpy array with the coordinates of possible moves.
+		"""
 
 		# The rook may move any number of spaces along its current rank/file.
 		# It may also attack opposing pieces in its movement path.
@@ -92,10 +109,18 @@ class Rook():
 
 	def move(self, action, piece_list, print_move=False, algebraic=True):
 
-		"""Moving piece's position"""
+		"""
+		Moves the piece's position based on the given action and piece list.
 
-		# Args:	(1) action (element of action vector), (2) piece list, (3) print move? (4) algebraic notation?
-		# Returns:	void
+		Parameters:
+		action (int): An element of the action vector representing the movement direction.
+		piece_list (list): A list of all pieces on the board.
+		print_move (bool, optional): If True, prints the move in a human-readable format. Defaults to False.
+		algebraic (bool, optional): If True, prints the move in algebraic notation. Defaults to True.
+
+		Returns:
+		None
+		"""
 
 		# Action vector:
 		# [1-7 +file, 1-7 -file, 1-7 +rank, 1-7 -rank, 28 zeros]
@@ -146,9 +171,16 @@ class Rook():
 
 
 	def remove(self):
+		"""
+		Removes the piece from the board.
 
-		"""Removing piece from board"""
+		This method sets the 'is_active' attribute of the piece to False, effectively
+		marking it as inactive and removing it from the game.
 
-		# Args:	none
-		# Returns:	void
+		Args:
+			None
+
+		Returns:
+			None
+		"""
 		self.is_active = False

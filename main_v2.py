@@ -28,6 +28,10 @@ stop_thread = False
 
 # Function to print the elapsed time continuously
 def print_time():
+    """
+    This function prints the elapsed time in seconds. 
+    It runs in an infinite loop until the global variable stop_thread is set to True.
+    """
     global stop_thread
     start_time = time.time()
     while not stop_thread:
@@ -37,6 +41,14 @@ def print_time():
 
 class DQNModel(nn.Module):
     def __init__(self, state_size, action_size, hidden_units):
+        """
+        Initialize a DQNModel object.
+
+        Parameters:
+        state_size (int): The size of the input state. In this case, it's the size of the board state (8x8x12).
+        action_size (int): The size of the output action space. In this case, it's the number of possible moves for each piece.
+        hidden_units (int): The number of hidden units in each layer of the neural network.
+        """
         super(DQNModel, self).__init__()
         self.state_size = state_size
         self.action_size = action_size
@@ -50,8 +62,17 @@ class DQNModel(nn.Module):
         self.fc3 = nn.Linear(hidden_units, action_size)
 
     def forward(self, state, action=None):
-        # Reshape state to (batch_size, channels, height, width)
-        x = state.view(-1, 12, 8, 8)
+        """
+        Perform forward pass through the neural network.
+
+        Parameters:
+        state (torch.Tensor): The input state represented as a 3D tensor of shape (batch_size, channels, height, width).
+        action (torch.Tensor, optional): The action taken by the agent. If provided, return the Q-value for the taken action.
+
+        Returns:
+        q_value (torch.Tensor): The Q-value for the taken action if action is provided. Otherwise, return all Q-values.
+        """
+        x = state.view(-1, 12, 8, 8) # Reshape state to (batch_size, channels, height, width)
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = x.view(x.size(0), -1)  # Flatten
@@ -69,6 +90,15 @@ class DQNModel(nn.Module):
     
 class DQNAgent:
     def __init__(self, state_size, action_size, hidden_units, learning_rate):
+        """
+        Initialize the DQNAgent with the given parameters.
+
+        Parameters:
+        state_size (int): The size of the state input to the neural network.
+        action_size (int): The size of the action output from the neural network.
+        hidden_units (int): The number of hidden units in the neural network.
+        learning_rate (float): The learning rate for the optimizer.
+        """
         self.state_size     = state_size
         self.action_size    = action_size
         self.hidden_units   = hidden_units
@@ -101,9 +131,35 @@ class DQNAgent:
         self.update_target_model()
 
     def update_target_model(self):
+        """
+        Updates the target model with the weights of the current model.
+
+        The target model is a copy of the current model used for calculating the target values in the
+        Double Deep Q-Networks (DDQN) algorithm. This function ensures that the target model stays up-to-date
+        with the current model.
+
+        Parameters:
+        None
+
+        Returns:
+        None
+        """
         self.target_model.load_state_dict(self.model.state_dict())
 
     def remember(self, state, action, reward, next_state, done):
+        """
+        Stores a tuple of experience (state, action, reward, next_state, done) in the memory.
+
+        Parameters:
+        - state (numpy.ndarray or torch.Tensor): The current state of the environment.
+        - action (int): The action taken by the agent in the current state.
+        - reward (float): The reward received after taking the action in the current state.
+        - next_state (numpy.ndarray or torch.Tensor): The state of the environment after taking the action.
+        - done (bool): A flag indicating whether the episode has ended after taking the action.
+
+        Returns:
+        None
+        """
         # Move tensors to CPU if they're on GPU
         if isinstance(state, torch.Tensor):
             state = state.cpu().numpy()
@@ -113,7 +169,16 @@ class DQNAgent:
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
-        # Epsilon-greedy policy for action selection
+        """
+        Epsilon-greedy policy for action selection.
+
+        Parameters:
+        state (numpy.ndarray): The current state of the game board.
+
+        Returns:
+        action (int): The selected action based on the epsilon-greedy policy.
+        q_values (numpy.ndarray): The Q-values for each action in the current state.
+        """
         if np.random.rand() <= self.epsilon:
             return r.randrange(self.action_size), None
         
@@ -128,6 +193,15 @@ class DQNAgent:
         return action, q_values.cpu().numpy().flatten()
 
     def replay(self, batch_size):
+        """
+        Performs a single step of the Q-learning algorithm by replaying a batch of experiences.
+
+        Parameters:
+        batch_size (int): The number of experiences to sample from the memory for training.
+
+        Returns:
+        float: The loss value computed for the batch of experiences.
+        """
         minibatch = r.sample(self.memory, batch_size)
         states, actions, rewards, next_states, dones = zip(*minibatch)
 
@@ -178,10 +252,23 @@ class DQNAgent:
         torch.save(self.model.state_dict(), f"{name}.pth")
         print("Model saved.")
 
+    def transfer_weights_from_model(self, model):
+        self.load(model)
+        self.update_target_model()
+
 def initialize_board(random=False, keep_prob=1.0):
     """
     Initialize Game Board
-    Returns: Game board state parameters
+
+    Parameters:
+    random (bool): A boolean indicating whether to initialize the board with random pieces. Default is False.
+    keep_prob (float): A float representing the probability of keeping a piece during random initialization. Default is 1.0.
+
+    Returns:
+    pieces (list): The initialized board pieces.
+    board_state (numpy.ndarray): The state space of the initialized board.
+    player (str): The current player ('white' or 'black').
+    move (int): The move counter.
     """
     # Initialize board pieces
     pieces = s.initialize_pieces(random=random, keep_prob=keep_prob)
@@ -196,12 +283,35 @@ def initialize_board(random=False, keep_prob=1.0):
     return pieces, board_state, player, move
 
 def visualize_board(pieces, player, move):
+    """
+    Visualizes the current state of the game board.
+
+    Parameters:
+    pieces (list): A list representing the pieces on the board. Each element is an instance of a Piece class.
+    player (str): A string representing the current player ('white' or 'black').
+    move (int): An integer representing the current move number.
+
+    Returns:
+    None. The function prints the current board state to the console.
+    """
     print("\nCurrent Board at Move " + str(move) + " for Player " + player)
     print(s.visualize_state(pieces))
 
 def move_piece(piece, move_index, player, pieces, switch_player=False, print_move=False, algebraic=True):
     """
-    Perform specified move
+    Perform specified move.
+
+    Parameters:
+    piece (int): The index of the piece to be moved.
+    move_index (int): The index of the move to be performed.
+    player (str): The current player ('white' or 'black').
+    pieces (list): A list of Piece objects representing the current state of the game board.
+    switch_player (bool, optional): Whether to switch the player after the move. Defaults to False.
+    print_move (bool, optional): Whether to print the move. Defaults to False.
+    algebraic (bool, optional): Whether to print the move in algebraic notation. Defaults to True.
+
+    Returns:
+    player (str): The updated player ('white' or 'black') if switch_player is True.
     """
     if player == 'white':
         pieces[piece].move(move_index, pieces, print_move=print_move, algebraic=algebraic)
@@ -390,19 +500,20 @@ if __name__ == "__main__":
     - training_loss        [str]            Output .txt file name / path for training loss
     """
 
-    parser.add_argument("-t",  "--trainsteps",   help="Number of training steps (Default 1000)",             type=int,   default=1000)
-    parser.add_argument("-u",  "--hidunits",     help="Number of hidden units (Default 512)",                type=int,   default=512)
-    parser.add_argument("-r",  "--learnrate",    help="Learning rate (Default 0.001)",                       type=float, default=0.001)
-    parser.add_argument("-b",  "--batchsize",    help="Batch size (Default 32)",                             type=int,   default=32)
-    parser.add_argument("-m",  "--maxmoves",     help="Maximum moves for MC simulations (Default 100)",      type=int,   default=100)
-    parser.add_argument("-e",  "--epsilon",      help="Epsilon-greedy policy evaluation (Default 0.2)",      type=float, default=0.2)
-    parser.add_argument("-v",  "--visualize",    help="Visualize game board? (Default False)",               type=bool,  default=False)
-    parser.add_argument("-p",  "--print",        help="Print moves? (Default False)",                        type=bool,  default=False)
-    parser.add_argument("-a",  "--algebraic",    help="Print moves in algebraic notation? (Default False)",  type=bool,  default=False)
-    parser.add_argument("-l",  "--loadfile",     help="Load model from saved checkpoint? (Default False)",   type=bool,  default=False)
-    parser.add_argument("-rd", "--rootdir",      help="Root directory for project",                          type=str,   default="./results")
-    parser.add_argument("-sd", "--savedir",      help="Save directory for project",                          type=str,   default="./results/checkpoints/model")
-    parser.add_argument("-ld", "--loaddir",      help="Load directory for project",                          type=str,   default="./results/checkpoints/model")
+    parser.add_argument("-t",  "--trainsteps",   help="Number of training steps (Default 1000)",                    type=int,   default=1000)
+    parser.add_argument("-u",  "--hidunits",     help="Number of hidden units (Default 512)",                       type=int,   default=512)
+    parser.add_argument("-r",  "--learnrate",    help="Learning rate (Default 0.001)",                              type=float, default=0.001)
+    parser.add_argument("-b",  "--batchsize",    help="Batch size (Default 32)",                                    type=int,   default=32)
+    parser.add_argument("-m",  "--maxmoves",     help="Maximum moves for MC simulations (Default 100)",             type=int,   default=100)
+    parser.add_argument("-e",  "--epsilon",      help="Epsilon-greedy policy evaluation (Default 0.2)",             type=float, default=0.2)
+    parser.add_argument("-v",  "--visualize",    help="Visualize game board? (Default False)",                      type=bool,  default=False)
+    parser.add_argument("-p",  "--print",        help="Print moves? (Default False)",                               type=bool,  default=False)
+    parser.add_argument("-a",  "--algebraic",    help="Print moves in algebraic notation? (Default False)",         type=bool,  default=False)
+    parser.add_argument("-l",  "--loadfile",     help="Load model from saved checkpoint? (Default False)",          type=bool,  default=False)
+    parser.add_argument("-ts", "--transfer",     help="Transfer weights from pre-trained model? (Default False)",   type=bool, default=False)
+    parser.add_argument("-rd", "--rootdir",      help="Root directory for project",                                 type=str,   default="./results")
+    parser.add_argument("-sd", "--savedir",      help="Save directory for project",                                 type=str,   default="./results/checkpoints/model")
+    parser.add_argument("-ld", "--loaddir",      help="Load directory for project",                                 type=str,   default="./results/checkpoints/model")
 
     # Parse Arguments from Command Line
     args = parser.parse_args()
@@ -419,6 +530,7 @@ if __name__ == "__main__":
     visualize = args.visualize
     print_moves = args.print
     algebraic = args.algebraic
+    weight_transfer = args.transfer
 
     # Load File
     load_file = args.loadfile
@@ -441,6 +553,14 @@ if __name__ == "__main__":
     state_size = 768  # 8x8x12
     action_size = 16 * 56  # 16 pieces, 56 possible moves each
     agent = DQNAgent(state_size, action_size, hidden_units, learning_rate)
+    
+    # Load model if specified
+    if load_file:
+        agent.load(load_path)
+    elif weight_transfer:
+        # Transfer weights from pre-trained model
+        agent.transfer_weights_from_model(load_path)
+        print(f"Weights transferred from {load_path}")
 
     start_time = t.time()
     # Variable to control the timer thread

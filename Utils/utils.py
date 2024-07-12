@@ -10,16 +10,19 @@ from .Pieces.Rook import Rook
 
 
 def initialize_pieces(random=False, keep_prob=1.0):
-
 	"""
-	Construct list of pieces as objects
+    Construct list of pieces as objects. This function initializes a chess board with all pieces in their starting positions.
+    If the 'random' parameter is set to True, the function will randomize the piece positions and activity based on the 
+    provided 'keep_prob' probability.
 
-	Args: random: Whether board is initialized to random initial state
-		  keep_prob: Probability of retaining piece
+    Args:
+        random (bool): Whether to initialize the board to a random state. Default is False.
+        keep_prob (float): Probability of retaining a piece when randomizing the board state. Default is 1.0.
 
-	Returns: Python list of pieces
-	1,1 = a1 ... 8,8 = h8
-	"""
+    Returns:
+        list: A list of Piece objects representing the chess pieces on the board. The pieces are ordered as follows:
+              1,1 = a1 ... 8,8 = h8
+    """
 
 	piece_list = [Rook('white',1,1), Knight('white',2,1), Bishop('white',3,1), Queen('white'),
 				  King('white'), 	 Bishop('white',6,1), Knight('white',7,1), Rook('white',8,1),
@@ -57,7 +60,6 @@ def initialize_pieces(random=False, keep_prob=1.0):
 	return piece_list
 
 def board_state(piece_list):
-
 	"""Configuring inputs for value function network
 
 	The output contains M planes of dimensions (N X N) where (N X N) is the size of the board.
@@ -138,12 +140,21 @@ def board_state(piece_list):
 	return board
 
 def visualize_state(piece_list):
-
 	"""
-	Visualizing board in terminal
+    Visualizes the current state of the chess board in the terminal.
 
-	The output is an 8x8 grid indicating the present locations for each piece
-	"""
+    The function creates an 8x8 grid, representing the chess board, and populates it with the 
+    present locations of each piece. Each piece is represented by a single character, based on its 
+    color and type.
+
+    Parameters:
+    piece_list (list): A list of Piece objects representing the chess pieces on the board. 
+                      Each Piece object has attributes for color, name, file, and rank.
+
+    Returns:
+    visualization (numpy.ndarray): An 8x8 numpy array of strings, where each string represents a 
+                                  piece on the board. Empty squares are represented by a space (' ').
+    """
 	# Initializing empty grid
 	visualization = np.empty([8,8], dtype=object)
 	for i in range(0,8):
@@ -199,19 +210,23 @@ def visualize_state(piece_list):
 
 
 def action_space(piece_list, player):
-
 	"""
-	Determining available moves for evaluation
+    Determines available moves for evaluation in a chess game.
 
-	The output is a P x 56 matrix where P is the numieces and 56ber of p is the maximum
-	possible number of moves for any piece. For pieces which have less than  possible
-	moves, zeros are appended to the end of the row. A value of 1 indicates that a
-	move is available while a value of 0 means that it is not.
+    The function generates a matrix representing the available moves for each piece on the board.
+    The output is a P x 56 matrix, where P is the number of pieces and 56 is the maximum possible number
+    of moves for any piece. For pieces with fewer possible moves, zeros are appended to the end of the row.
+    A value of 1 indicates that a move is available, while a value of 0 means that it is not.
 
-	See each pieces in Utils/Pieces/*.py for move glossary
+    Parameters:
+    piece_list (list): A list of Piece objects representing the chess pieces on the board.
+                      Each Piece object has attributes for color, name, file, rank, and a method
+                      'actions' that returns a vector of possible actions for that piece.
+    player (str): A string representing the current player ('white' or 'black').
 
-	Return: action space
-	"""
+    Returns:
+    action_space (numpy.ndarray): A P x 56 numpy array representing the available moves for each piece.
+    """
 
 	# Initializing action space with dimensions P x 56
 	action_space = np.zeros((16,56))
@@ -229,16 +244,16 @@ def action_space(piece_list, player):
 	return action_space
 
 def points(piece_list):
-
 	"""
-	Calculating point differential for the given board state
+    Calculates the point differential for the given board state based on the standard chess value system.
 
-	The points are calculated via the standard chess value system:
-	Pawn = 1, King = 3, Bishop = 3, Rook = 5, Queen = 9
-	King = 100 (arbitrarily large)
+    Parameters:
+    piece_list (list): A list of Piece objects representing the chess pieces on the board.
+                      Each Piece object has attributes for color, name, and value.
 
-	Returns: differential (white points - black points)
-	"""
+    Returns:
+    int: The point differential, calculated as the sum of white pieces' values minus the sum of black pieces' values.
+    """
 
 	differential = 0
 	# For all white pieces

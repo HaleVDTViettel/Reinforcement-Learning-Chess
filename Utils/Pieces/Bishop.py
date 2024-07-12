@@ -6,7 +6,17 @@ class Bishop():
 
 	def __init__(self, color, start_file, start_rank):
 
-		"""Defining initial attributes of piece"""
+		"""
+		Initialize a Bishop piece with its initial attributes.
+
+		Parameters:
+		color (str): The color of the bishop piece ('white' or 'black').
+		start_file (int): The initial vertical column of the bishop piece (1-8, where 1 is queenside and 8 is kingside).
+		start_rank (int): The initial horizontal row of the bishop piece (1-8, where 1 is white and 8 is black).
+
+		Returns:
+		None
+		"""
 
 		# Piece Attributes
 		self.name = 'Bishop'	# Name
@@ -30,17 +40,18 @@ class Bishop():
 
 	
 	def actions(self, piece_list, return_coordinates=False):
-
 		"""
-		Args: piece_list
-		Returns: numpy array (with possible actions for piece)
-		Array format:
-		[[file1 rank1]
-		 [file2 rank2]...]
+		Calculate the possible actions for the bishop piece.
 
-		The bishop can move diagonally in any direction.
+		Args:
+		piece_list (list): A list of all pieces on the board.
+		return_coordinates (bool, optional): If True, return the coordinates of the possible actions. Defaults to False.
 
-		For each tile along one of the four movement vectors, append coordinate if:
+		Returns:
+		numpy.ndarray: A 1x56 numpy array representing the possible actions for the bishop. If return_coordinates is True,
+		return a 2D numpy array with the coordinates of the possible actions.
+
+		The bishop can move diagonally in any direction. For each tile along one of the four movement vectors, append coordinate if:
 		(1) The index is in bounds
 		(2) There is no piece of the same color
 		(3) There was no piece of the opposite color in the preceding step
@@ -89,23 +100,26 @@ class Bishop():
 
 
 	def move(self, action, piece_list, print_move=False, algebraic=True):
-
 		"""
-		Moving piece's position
+		This function moves the piece's position based on the given action and piece list.
+		It also handles the removal of a piece if one is present in the destination tile.
+		If print_move is True, it prints the movement in either algebraic or descriptive notation.
 
-		Args:		action (element of action vector), 
-					piece list, 
-					print move (bool),
-					algebraic notation (bool)
+		Args:
+			action (int): An element of the action vector representing the movement direction.
+			piece_list (list): A list of all pieces on the board.
+			print_move (bool, optional): A flag indicating whether to print the movement. Defaults to False.
+			algebraic (bool, optional): A flag indicating whether to use algebraic notation for printing. Defaults to True.
 
 		Action vector:
 		[1-7 +f/+r, 
-		 1-7 +f/-r, 
-		 1-7 -f/+r, 
-		 1-7 -f/-r, 
-		 28 zeros]
+		1-7 +f/-r, 
+		1-7 -f/+r, 
+		1-7 -f/-r, 
+		28 zeros]
 
-		Temporarily save old position for the purposes of algebraic notation
+		Returns:
+			None
 		"""
 		old_rank = self.rank
 		old_file = self.file
@@ -152,9 +166,16 @@ class Bishop():
 
 
 	def remove(self):
+		"""
+		Removes the piece from the board.
 
-		"""Removing piece from board"""
+		This method sets the 'is_active' attribute of the piece to False, effectively
+		marking it as inactive and removing it from the game.
 
-		# Args:	none
-		# Returns:	void
+		Args:
+			None
+
+		Returns:
+			None
+		"""
 		self.is_active = False

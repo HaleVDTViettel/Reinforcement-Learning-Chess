@@ -6,7 +6,17 @@ class Knight():
 
 	def __init__(self, color, start_file, start_rank):
 
-		"""Defining initial attributes of piece"""
+		"""
+		Initialize a Knight piece with its initial attributes.
+
+		Parameters:
+		color (str): The color of the knight piece ('white' or 'black').
+		start_file (int): The initial vertical column of the knight piece (1-8, where 'a'=1 and 'h'=8).
+		start_rank (int): The initial horizontal row of the knight piece (1-8, where 1 is white and 8 is black).
+
+		Returns:
+		None
+		"""
 
 		# Piece Attributes
 		self.name = 'Knight'	# Name
@@ -33,11 +43,18 @@ class Knight():
 	# [[file1 rank1]
 	#  [file2 rank2]...]
 	def actions(self, piece_list, return_coordinates=False):
+		"""
+		Determines the possible actions for the knight piece.
 
-		"""Determining possible actions for piece"""
+		Parameters:
+		piece_list (list): A list of all pieces on the board.
+		return_coordinates (bool, optional): If True, return the coordinates of possible moves.
+											If False, return a binary action space vector.
+											Defaults to False.
 
-		# Args: piece_list
-		# Returns: numpy array
+		Returns:
+		numpy.ndarray: A numpy array containing either the coordinates of possible moves or a binary action space vector.
+		"""
 
 		# A knight may have any of 8 possible actions:
 		# Move forward 2 tiles in any direction + 1 tile perpendicularly
@@ -87,11 +104,18 @@ class Knight():
 
 
 	def move(self, action, piece_list, print_move=False, algebraic=True):
+		"""
+		Moves the piece's position based on the given action.
 
-		"""Moving piece's position"""
+		Parameters:
+		action (int): An element of the action vector representing the desired move.
+		piece_list (list): A list of all pieces on the board.
+		print_move (bool, optional): If True, prints the move in a human-readable format. Defaults to False.
+		algebraic (bool, optional): If True, prints the move in algebraic notation. If False, prints the move in a descriptive format. Defaults to True.
 
-		# Args:	(1) action (element of action vector), (2) piece list, (3) print move? (4) algebraic notation?
-		# Returns:	void
+		Returns:
+		None
+		"""
 
 		# Temporarily save old position for the purposes of algebraic notation
 		old_rank = self.rank
@@ -153,9 +177,16 @@ class Knight():
 
 
 	def remove(self):
+		"""
+		Removes the piece from the board.
 
-		"""Removing piece from board"""
+		This method sets the 'is_active' attribute of the piece to False, effectively
+		marking it as inactive and removing it from the game.
 
-		# Args:	none
-		# Returns:	void
+		Args:
+			None
+
+		Returns:
+			None
+		"""
 		self.is_active = False

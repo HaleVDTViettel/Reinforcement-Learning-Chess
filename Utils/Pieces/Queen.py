@@ -6,14 +6,31 @@ class Queen():
 
 	def __init__(self, color):
 
-		"""Defining initial attributes of piece"""
+		"""
+		Initialize a new instance of the Queen class.
+
+		Parameters:
+		color (str): The color of the queen piece. It should be either 'white' or 'black'.
+
+		Attributes:
+		name (str): The name of the piece, which is 'Queen'.
+		symbol (str): The symbol for algebraic notation, which is 'Q'.
+		value (int): The value of the piece, which is 9 for a queen.
+		color (str): The color of the piece.
+		is_active (bool): Indicates whether the piece is active or not.
+		start_file (int): The starting file position of the piece.
+		start_rank (int): The starting rank position of the piece.
+		move_count (int): The number of times the piece has been moved.
+		file (int): The current file position of the piece.
+		rank (int): The current rank position of the piece.
+		"""
 
 		# Piece Attributes
-		self.name = 'Queen'		# Name
-		self.symbol = 'Q'		# Symbol for algebraic notation
-		self.value = 9			# Value (9 for queen)
-		self.color = color		# Color
-		self.is_active = True	# Active/Inactive
+		self.name = 'Queen'
+		self.symbol = 'Q'
+		self.value = 9
+		self.color = color
+		self.is_active = True
 
 		# Starting position
 		# File = vertical column (a = 1 = queenside ... h = 8 = kingside)
@@ -33,22 +50,22 @@ class Queen():
 
 	def actions(self, piece_list, return_coordinates=False):
 
-		"""Determining possible actions for piece
+		"""
+		Determines the possible actions for the queen piece.
 
-		Args: piece_list
-		Returns: numpy array
+		Args:
+		piece_list (list): A list of all pieces on the board.
+		return_coordinates (bool, optional): If True, returns the coordinates of possible moves. Defaults to False.
 
-		# The queen's movement is a combination of bishop and rook
+		Returns:
+		numpy.ndarray or list: A numpy array of action space if return_coordinates is False, else a list of coordinates.
 
-		# VERTICAL/HORIZONTAL
-		# For each tile along one of the four movement vectors, append coordinate if:
-		# (1) The index is in bounds
-		# (2) There is no piece of the same color
-		# (3) There was no piece of the opposite color in the preceding step
-
+		The queen's movement is a combination of bishop and rook. This function calculates the possible moves for the queen
+		based on the rules of chess. It checks for valid moves in all eight directions (forward, backward, left, right,
+		and diagonally) and returns either the action space (numpy array) or the coordinates of possible moves.
+		"""
 		# Initialize action vector:
 		# [1-7 +f, 1-7 -f, 1-7 +r, 1-7 -r, 1-7 +f/+r, 1-7 +f/-r, 1-7 -f/+r, 1-7 -f/-r]
-		"""
 		action_space = np.zeros((1,56))
 
 		# Initialize coordinate aray
@@ -57,7 +74,10 @@ class Queen():
 		if self.is_active:
 
 			# Initialize movement vector array (file, rank)
-			movement = np.array([[1,0],[-1,0],[0,1],[0,-1]])
+			movement = np.array([[1,0],
+								 [-1,0],
+								 [0,1],
+								 [0,-1]])
 
 			for i in range(0,4):
 				break_loop = False
@@ -120,11 +140,18 @@ class Queen():
 
 	def move(self, action, piece_list, print_move=False, algebraic=True):
 
-		"""Moving piece's position"""
+		"""
+		Moves the piece's position based on the given action and piece list.
 
-		# Args:	(1) action (element of action vector), (2) piece list, (3) print move? (4) algebraic notation?
-		# Returns:	void
+		Parameters:
+		action (int): An element of the action vector representing the movement direction.
+		piece_list (list): A list of all pieces on the board.
+		print_move (bool, optional): If True, prints the move in a human-readable format. Defaults to False.
+		algebraic (bool, optional): If True, prints the move in algebraic notation. Defaults to True.
 
+		Returns:
+		None
+		"""
 		# Action vector:
 		# [1-7 +f, 1-7 -f, 1-7 +r, 1-7 -r, 1-7 +f/+r, 1-7 +f/-r, 1-7 -f/+r, 1-7 -f/-r]
 
@@ -189,9 +216,16 @@ class Queen():
 
 
 	def remove(self):
+		"""
+		Removes the piece from the board.
 
-		"""Removing piece from board"""
+		This method sets the 'is_active' attribute of the piece to False, effectively
+		marking it as inactive and removing it from the game.
 
-		# Args:	none
-		# Returns:	void
+		Args:
+			None
+
+		Returns:
+			None
+		"""
 		self.is_active = False

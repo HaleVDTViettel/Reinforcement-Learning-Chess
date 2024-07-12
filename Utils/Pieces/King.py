@@ -6,7 +6,26 @@ class King():
 
 	def __init__(self, color):
 
-		"""Defining initial attributes of piece"""
+		"""
+		Initialize the King piece with its initial attributes.
+
+		Parameters:
+		color (str): The color of the piece ('white' or 'black').
+
+		Attributes:
+		name (str): The name of the piece, always 'King'.
+		symbol (str): The symbol for algebraic notation, always 'K'.
+		value (int): The value of the piece, always 100.
+		color (str): The color of the piece ('white' or 'black').
+		is_active (bool): Indicates whether the piece is active or not, always True.
+		start_file (int): The starting file of the piece (1-8).
+		start_rank (int): The starting rank of the piece (1-8).
+		move_count (int): The number of times the piece has been moved.
+		file (int): The current file of the piece (1-8).
+		rank (int): The current rank of the piece (1-8).
+		kCastle (bool): Indicates whether the king can perform kingside castle.
+		qCastle (bool): Indicates whether the king can perform queenside castle.
+		"""
 
 		# Piece Attributes
 		self.name = 'King'		# Name
@@ -24,7 +43,6 @@ class King():
 		else:
 			self.start_file = 5
 			self.start_rank = 8
-		# Initializing move counter (increment when moved)
 		self.move_count = 0
 
 		# Current position
@@ -37,17 +55,18 @@ class King():
 		# Can queenside castle?
 		self.qCastle = False
 
-
-	# Returning numpy array with possible actions for piece
-	# Array format:
-	# [[file1 rank1]
-	#  [file2 rank2]...]
 	def actions(self, piece_list, return_coordinates=False):
 
-		"""Determining possible actions for piece"""
+		"""
+		Determines possible actions for a piece.
 
-		# Args: piece_list
-		# Returns: numpy array
+		Args:
+		piece_list (list): A list of all pieces on the board.
+		return_coordinates (bool, optional): A boolean indicating whether to return the coordinates of possible moves or the action space. Default is False.
+
+		Returns:
+		numpy.ndarray: A numpy array representing the possible moves or the action space.
+		"""
 
 		# The king may move one tile in any direction. The king may castle as a first move.
 		# Special case of the queen where "j" is fixed to 1.
@@ -186,10 +205,18 @@ class King():
 
 	def move(self, action, piece_list, print_move=False, algebraic=True):
 
-		"""Moving piece's position"""
+		"""
+		Moves the piece's position based on the given action and the piece list.
 
-		# Args:	(1) action (element of action vector), (2) piece list, (3) print move? (4) algebraic notation?
-		# Returns:	void
+		Parameters:
+		action (int): The action to be taken by the piece. This is an element of the action vector.
+		piece_list (list): A list of all pieces on the board.
+		print_move (bool, optional): A boolean indicating whether to print the move. Default is False.
+		algebraic (bool, optional): A boolean indicating whether to use algebraic notation for printing the move. Default is True.
+
+		Returns:
+		None
+		"""
 
 		# Temporarily save old position for the purposes of algebraic notation
 		old_rank = self.rank
@@ -275,9 +302,16 @@ class King():
 					print(f"\n{self.name} to {self.file},{self.rank}", end=" "*20+"\r")
 
 	def remove(self):
+		"""
+		Removes the piece from the board.
 
-		"""Removing piece from board"""
+		This method sets the 'is_active' attribute of the piece to False, effectively
+		marking it as inactive and removing it from the game.
 
-		# Args:	none
-		# Returns:	void
+		Args:
+			None
+
+		Returns:
+			None
+		"""
 		self.is_active = False
