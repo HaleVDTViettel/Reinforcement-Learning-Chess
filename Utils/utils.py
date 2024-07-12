@@ -95,7 +95,6 @@ def board_state(piece_list):
 		if piece.is_active:
 			# Place active white pieces in planes 0-5 and continue to next piece
 			if piece.color == 'white':
-				
 				if piece.name == 'Pawn':
 					board[piece.file-1, piece.rank-1, 0] = 1
 
@@ -146,14 +145,17 @@ def visualize_state(piece_list):
 	The output is an 8x8 grid indicating the present locations for each piece
 	"""
 	# Initializing empty grid
-	visualization = np.empty([8,8],dtype=object)
+	visualization = np.empty([8,8], dtype=object)
 	for i in range(0,8):
 		for j in range(0,8):
 			visualization[i,j] = ' '
 
 	for piece in piece_list:
+
 		if piece.is_active:
+
 			if piece.color == 'white':
+
 				if piece.name == 'Pawn':
 					visualization[piece.file-1, piece.rank-1] = 'P'
 
@@ -172,7 +174,8 @@ def visualize_state(piece_list):
 				elif piece.name == 'King':
 					visualization[piece.file-1, piece.rank-1] = 'K'
 
-			if piece.color == 'black':
+			elif piece.color == 'black':
+
 				if piece.name == 'Pawn':
 					visualization[piece.file-1, piece.rank-1] = 'p'
 
@@ -190,7 +193,6 @@ def visualize_state(piece_list):
 
 				elif piece.name == 'King':
 					visualization[piece.file-1, piece.rank-1] = 'k'
-
 
 	# Return visualization
 	return visualization
